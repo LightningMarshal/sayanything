@@ -22,7 +22,7 @@ spawn, `permissions.js`).
 
 | Need | X11 | Wayland |
 |---|---|---|
-| Watch the hotkey (press and release) | XInput2 raw key events, filtered to watched keys inside the helper | No global key access for normal apps. Options: (a) **xdg-desktop-portal GlobalShortcuts** (press = Activated, release = Deactivated; supported by KDE Plasma 5.27+ and GNOME 48+; the user approves the binding once), (b) reading `/dev/input` (evdev), which needs the `input` group and lets the process see every keystroke |
+| Watch the hotkey (press and release) | XInput2 raw key events, filtered to watched keys inside the helper | No global key access for normal apps. Options: (a) **xdg-desktop-portal GlobalShortcuts** (press = Activated, release = Deactivated; supported by KDE Plasma 6+ and GNOME 48+; the user approves the binding once), (b) reading `/dev/input` (evdev), which needs the `input` group and lets the process see every keystroke |
 | "Chord" bit (WS-5) | Yes, from the same XInput2 stream | Portal: not available (the compositor only reports the shortcut) |
 | Insert text | XTest Ctrl+V after a clipboard swap, or XTest unicode via keysym remapping | **RemoteDesktop portal** (user prompt per session), `wtype` (wlroots compositors only), `ydotool` (uinput, needs a root daemon) |
 | Clipboard | X selections (CLIPBOARD) | `wl-clipboard`, or Electron's own clipboard from the main process |
