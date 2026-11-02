@@ -99,11 +99,11 @@ desktop, see `docs/MANUAL-TESTS.md`.
 | WS-9 | Insert without the clipboard (UIA / AX) | Not started |
 | WS-10 | History privacy | Off by default, encrypted at rest, fail closed |
 | WS-11 | Boot fails silently | Required modules now fatal with a dialog |
-| WS-12 | Distribution and trust (signing, releases, fuses) | Not started (no certificates yet) |
+| WS-12 | Distribution and trust (signing, releases, fuses) | Deferred by the owner: code signing (Windows certificate, Apple Developer ID) is a future feature, after every review category is above 9 |
 | WS-13 | Unfinished code review | Not started |
 | WS-14 | Empirical "100% local" egress test | Not started (needs hardware) |
 | WS-15 | Product ideas | Owner's call |
-| Linux | Port | Plan in `docs/LINUX-PORT.md`, questions L1-L4 open |
+| Linux | Port | Plan in `docs/LINUX-PORT.md` revised: Wayland portals first (SteamOS KDE + Ubuntu GNOME), Flatpak; L3-L4 open |
 
 ## Roadmap / open items
 
