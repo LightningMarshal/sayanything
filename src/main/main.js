@@ -27,30 +27,43 @@ const { app, BrowserWindow, ipcMain, session, Notification, dialog } = require('
 // live under %APPDATA%/SayAnything alongside our data (config.js anchors there too).
 try { app.setName('SayAnything'); } catch (e) { /* best-effort */ }
 
-function safeRequire(id) {
-  try {
-    return require(id);
-  } catch (err) {
-    try { require('./log').error('boot: failed to require ' + id, err); } catch (e) { /* ignore */ }
-    return null;
-  }
+// Required modules failing to load is fatal (dialog + exit, see failBoot);
+// optional ones degrade gracefully. See boot-modules.js (WS-11).
+const bootModules = require('./boot-modules');
+const loaded = bootModules.loadModules(function (id) { return require(id); });
+const bootFatal = bootModules.fatalFailures(loaded.failures);
+
+const config = loaded.mods.config;
+const log = loaded.mods.log || { debug: noop, info: noop, warn: noop, error: noop };
+const ipc = loaded.mods.ipc;
+const settingsStore = loaded.mods.settingsStore;
+const historyStore = loaded.mods.historyStore;
+const helper = loaded.mods.helper;
+const binaries = loaded.mods.binaries;
+const server = loaded.mods.server;
+const models = loaded.mods.models;
+const rewriter = loaded.mods.rewriter;
+const audioSession = loaded.mods.audioSession;
+const windows = loaded.mods.windows;
+const tray = loaded.mods.tray;
+const state = loaded.mods.state;
+const permissions = loaded.mods.permissions;
+
+for (const f of loaded.failures) {
+  try { log.error('boot: failed to load ' + (f.required ? 'REQUIRED' : 'optional') + ' module ' + f.id, f.error); }
+  catch (e) { /* logging itself is unavailable */ }
 }
 
-const config = safeRequire('./config');
-const log = safeRequire('./log') || { debug: noop, info: noop, warn: noop, error: noop };
-const ipc = safeRequire('./ipc');
-const settingsStore = safeRequire('./stores/settings');
-const historyStore = safeRequire('./stores/history');
-const helper = safeRequire('./helper');
-const binaries = safeRequire('./whisper/binaries');
-const server = safeRequire('./whisper/server');
-const models = safeRequire('./whisper/models');
-const rewriter = safeRequire('./whisper/rewrite');
-const audioSession = safeRequire('./audio-session');
-const windows = safeRequire('./windows');
-const tray = safeRequire('./tray');
-const state = safeRequire('./state');
-const permissions = safeRequire('./permissions');
+// A required module is missing: tell the user plainly and quit, instead of
+// sitting in the tray doing nothing.
+function failBoot(reason) {
+  let logPath = '';
+  try { logPath = require('path').join(config.LOGS_DIR, 'SayAnything.log'); } catch (e) { /* config missing */ }
+  const msg = reason || bootModules.fatalMessage(bootFatal, logPath);
+  try { log.error('boot: fatal — ' + msg.replace(/\n+/g, ' | ')); } catch (e) { /* ignore */ }
+  try { dialog.showErrorBox('Say Anything could not start', msg); } catch (e) { /* headless */ }
+  app.exit(1);
+}
 
 const IS_DARWIN = process.platform === 'darwin';
 
@@ -92,12 +105,27 @@ if (!gotLock) {
   });
 
   if (isSmoke) {
-    app.whenReady().then(runSmoke).catch(function (err) {
+    app.whenReady().then(function () {
+      if (bootFatal.length) {
+        process.stdout.write(JSON.stringify({ summary: true, ok: false,
+          error: 'required modules failed to load: ' + bootFatal.map(function (f) { return f.id; }).join(', ') }) + '\n');
+        app.exit(1);
+        return;
+      }
+      return runSmoke();
+    }).catch(function (err) {
       try { process.stdout.write(JSON.stringify({ summary: true, ok: false, error: String(err) }) + '\n'); } catch (e) { /* ignore */ }
       app.exit(1);
     });
   } else {
-    app.whenReady().then(boot).catch(function (err) { logError('boot failed', err); });
+    app.whenReady().then(function () {
+      if (bootFatal.length) return failBoot();
+      return boot();
+    }).catch(function (err) {
+      logError('boot failed', err);
+      failBoot('Say Anything hit an unexpected error while starting:\n\n  ' +
+        ((err && err.message) || String(err)) + '\n\nDetails are in the log.');
+    });
     app.on('window-all-closed', function () { /* keep running in the tray */ });
     app.on('will-quit', shutdown);
   }
