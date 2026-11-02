@@ -18,7 +18,8 @@ const os = require('os');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const read = function (p) { return fs.readFileSync(path.join(ROOT, p), 'utf8'); };
+// Normalise CRLF: Windows checkouts convert line endings, and the regexes below expect \n.
+const read = function (p) { return fs.readFileSync(path.join(ROOT, p), 'utf8').replace(/\r\n/g, '\n'); };
 const contracts = read('docs/CONTRACTS.md');
 const cs = read('native/SayAnythingHelper.cs');
 const swift = read('native/SayAnythingHelper.swift');
