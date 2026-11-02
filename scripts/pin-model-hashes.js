@@ -57,7 +57,7 @@ async function downloadAndHash(url, tmpFile) {
   for await (const chunk of /** @type {any} */ (res.body)) {
     h.update(chunk);
     bytes += chunk.length;
-    if (!out.write(chunk)) await new Promise(function (r) { out.once('drain', r); });
+    if (!out.write(chunk)) await new Promise(function (r) { out.once('drain', function () { r(undefined); }); });
   }
   await new Promise(function (r) { out.end(function () { r(undefined); }); });
   return { sha256: h.digest('hex'), size: bytes };
