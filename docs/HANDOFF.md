@@ -91,7 +91,7 @@ desktop, see `docs/MANUAL-TESTS.md`.
 | WS-1 | Rewrite sanitizer could delete dictated text | Fixed, tests |
 | WS-2 | Dictations in clipboard history / cloud clipboard | Fixed; Windows opt-out formats verified in CI; hardware check pending |
 | WS-3 | Clipboard restore lost rich content | Fixed (all formats, bounded); HTML restore verified in CI |
-| WS-4 | Download integrity | Mac whisper commit pinned; 8 model digests pending (run the "Pin model hashes" workflow) |
+| WS-4 | Download integrity | Done: every model and the Windows zip SHA-256 pinned (cross-checked with Hugging Face), Mac whisper commit pinned |
 | WS-5 | Hotkey shortcuts (Ctrl+Arrow, AltGr) misfire | Fixed with the one-bit `chord` event; hardware check pending |
 | WS-6 | State machine untestable | Refactored, 21 scenarios |
 | WS-7 | CI Windows-only | Linux + Windows + macOS jobs, lint, types, smoke |
