@@ -185,6 +185,12 @@ Privacy here isn't a setting, it's how the thing is built.
 
 **Rewrite tab says "Ollama not detected."** The optional AI cleanup needs [Ollama](https://ollama.com) running. Install it, start it, pull a model (`ollama pull llama3.2`), then hit **Refresh**. It's off by default so this only matters if you want it, and if Ollama's ever unreachable you just get your plain text.
 
+**It pasted my OLD clipboard instead of what I said (Remote Desktop, Citrix, VMs, slow apps).** Text goes in by a quick clipboard swap: your words go on the clipboard, Ctrl+V is sent, and 300 ms later your previous clipboard is put back. A slow target can read the clipboard after it was restored. Quit Say Anything, raise `"restoreClipboardMs"` under `"inject"` in `settings.json` (`%APPDATA%\SayAnything` on Windows, `~/Library/Application Support/SayAnything` on Mac) to 800-1500, and start it again. Or set `"mode": "type"` there to type the text instead of pasting it.
+
+**It doesn't work in an app running as administrator.** Windows blocks a normal app from sending keystrokes to an elevated (admin) window. Say Anything doesn't run elevated, on purpose. Dictate into the elevated app's window from the drop pad and paste with Ctrl+V yourself. (Not yet verified on hardware, see `docs/MANUAL-TESTS.md`.)
+
+**I use Right Ctrl / AltGr in shortcuts.** Shortcuts like Right Ctrl + Arrow or AltGr + Q (for @) don't start a dictation: if another key goes down while the hotkey is held, the press is treated as a shortcut and dropped.
+
 **Nothing happens when I hold the key.** Check the tray menu isn't **Paused**, confirm your hotkey in Settings → Hotkey, and make sure the helper's running (Settings → About → Input helper). If it keeps crashing, restarting the app reinstalls the hook.
 
 ## Contributing
