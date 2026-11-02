@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * Run under Electron: `electron test/history-electron-check.js`.
+ * Run via `node test/run-electron-check.js test/history-electron-check.js`
+ * (which judges the verdict file, see that script), or directly under Electron.
  * Verifies that, with the REAL OS keystore (Electron safeStorage: DPAPI on
  * Windows, Keychain on macOS), the history store writes no transcript text in
  * the clear and reads it back. Exits non-zero on failure. Used by Windows CI.
@@ -12,6 +13,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createHistoryStore, _electronCodec } = require('../src/main/stores/history');
+
+// No GPU process: this check never draws, and skipping GPU start-up keeps
+// Electron's teardown short and quiet.
+app.disableHardwareAcceleration();
 
 app.whenReady().then(function () {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sayanything-history-electron-'));
@@ -36,5 +41,9 @@ app.whenReady().then(function () {
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ }
   const ok = results.every(Boolean);
   console.log('history-electron-check: ' + (ok ? 'ok' : 'FAILED'));
+  if (process.env.SAYANYTHING_CHECK_RESULT) {
+    try { fs.writeFileSync(process.env.SAYANYTHING_CHECK_RESULT, JSON.stringify({ ok: ok })); }
+    catch (e) { console.error('could not write verdict: ' + e.message); }
+  }
   app.exit(ok ? 0 : 1);
 });

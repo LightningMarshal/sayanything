@@ -55,7 +55,7 @@ jobs:
       - name: Helper self-test
         run: node test/helper-selftest.js
       - name: History is encrypted with the real OS keystore (DPAPI)
-        run: npx electron test/history-electron-check.js
+        run: node test/run-electron-check.js test/history-electron-check.js
       - name: Setup without a model (downloads whisper.cpp, checks its pinned SHA-256)
         run: node scripts/setup.js --no-model
       - name: Electron smoke test (settings, helper, whisper binaries)
