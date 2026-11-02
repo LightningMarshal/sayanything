@@ -79,6 +79,7 @@ function harness(opts) {
     set: function (partial) { deepMerge(settings, partial); listeners.forEach(function (cb) { cb(settings); }); },
   };
 
+  /** @type {any} */
   const helper = new EventEmitter();
   helper.watched = [];
   helper.watch = function (vks) { helper.watched = vks.slice().sort(function (a, b) { return a - b; }); };
@@ -244,7 +245,7 @@ scenario('OS key-repeat is ignored', async function () {
 });
 
 scenario('overlapping sessions inject in start order', async function () {
-  let releaseFirst;
+  let releaseFirst = /** @type {(v: string) => void} */ (function () {});
   const first = new Promise(function (r) { releaseFirst = r; });
   const h = harness({ transcripts: [first, 'second one'] });
   h.press(RCTRL, 400);               // session 1 finalizes, transcription pending

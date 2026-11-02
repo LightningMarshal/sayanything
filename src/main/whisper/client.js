@@ -49,7 +49,7 @@ async function _doTranscribe(wavBuffer, opts) {
 
   const url = 'http://127.0.0.1:' + st.port + '/inference';
   const form = new FormData();
-  form.append('file', new Blob([wavBuffer], { type: 'audio/wav' }), 'audio.wav');
+  form.append('file', new Blob([/** @type {Uint8Array<ArrayBuffer>} */ (wavBuffer)], { type: 'audio/wav' }), 'audio.wav');
   form.append('response_format', 'json');
   form.append('temperature', '0');
   if (opts.language) form.append('language', String(opts.language));
@@ -67,7 +67,7 @@ async function _doTranscribe(wavBuffer, opts) {
     res = await fetch(url, { method: 'POST', body: form, signal: AbortSignal.timeout(timeoutMs) });
   } catch (e) {
     if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
-      throw new Error('inference timed out after ' + timeoutMs + 'ms (whisper server unresponsive)');
+      throw new Error('inference timed out after ' + timeoutMs + 'ms (whisper server unresponsive)', { cause: e });
     }
     throw e;
   }
@@ -103,7 +103,7 @@ async function transcribePartial(wavBuffer, opts) {
 
   const url = 'http://127.0.0.1:' + st.port + '/inference';
   const form = new FormData();
-  form.append('file', new Blob([wavBuffer], { type: 'audio/wav' }), 'audio.wav');
+  form.append('file', new Blob([/** @type {Uint8Array<ArrayBuffer>} */ (wavBuffer)], { type: 'audio/wav' }), 'audio.wav');
   form.append('response_format', 'json');
   form.append('temperature', '0');
   if (opts.language) form.append('language', String(opts.language));

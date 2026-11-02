@@ -3,46 +3,71 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: Lint, test & compile helper
-    runs-on: windows-latest
-
+  # Platform-independent checks: lint, type check, unit + state-machine tests,
+  # and a C# 5 compile check of the Windows helper (Mono), on Linux.
+  checks:
+    name: Lint, types, tests, C# 5 compile check (Linux)
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js 24
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Install dev dependencies
+        run: npm ci
+      - name: No runtime dependencies (zero-deps rule)
+        run: |
+          node -e "const p=require('./package.json'); const d=Object.keys(p.dependencies||{}); if(d.length){console.error('runtime deps found: '+d.join(', ')); process.exit(1)} console.log('ok, 0 runtime dependencies')"
+      - name: Lint (ESLint)
+        run: npm run lint
+      - name: Type check (tsc --checkJs)
+        run: npm run typecheck
+      - name: Unit and state-machine tests
+        run: npm test
+      - name: Install Mono (C# compiler)
+        run: sudo apt-get update -q && sudo apt-get install -y -q mono-mcs mono-devel
+      - name: Windows helper compiles under C# 5
+        run: scripts/check-helper-cs.sh
 
+  windows:
+    name: Windows helper build + self-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Install dependencies
         run: npm ci
-
-      - name: Syntax-check all JS (node --check)
-        shell: pwsh
-        run: |
-          $files = Get-ChildItem -Recurse -Path src, scripts, test -Filter *.js
-          $failed = $false
-          foreach ($f in $files) {
-            node --check $f.FullName
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "syntax error: $($f.FullName)"
-              $failed = $true
-            } else {
-              Write-Host "ok: $($f.FullName)"
-            }
-          }
-          if ($failed) { exit 1 }
-
-      - name: Unit tests
+      - name: Unit and state-machine tests
         run: npm test
-
       - name: Compile native helper (Windows csc.exe)
         shell: cmd
         run: native\build.cmd
-
       - name: Helper self-test
         run: node test/helper-selftest.js
+
+  macos:
+    name: macOS helper build + tests
+    runs-on: macos-14
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dev dependencies
+        run: npm ci
+      - name: Unit and state-machine tests
+        run: npm test
+      - name: Compile native helper (swiftc, universal)
+        run: native/build-mac.sh

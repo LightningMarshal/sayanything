@@ -161,7 +161,7 @@ async function ensure() {
       fs.accessSync(exe, fs.constants.X_OK);
     } catch (e) {
       throw new Error('whisper-server missing or not executable at ' + exe +
-        ' — build it with ' + WHISPER_BUILD_MAC);
+        ' — build it with ' + WHISPER_BUILD_MAC, { cause: e });
     }
     return;
   }

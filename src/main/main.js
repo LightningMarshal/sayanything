@@ -93,7 +93,7 @@ if (!gotLock) {
 
   if (isSmoke) {
     app.whenReady().then(runSmoke).catch(function (err) {
-      try { process.stdout.write(JSON.stringify({ summary: true, ok: false, error: String(err) }) + '\n'); } catch (e) {}
+      try { process.stdout.write(JSON.stringify({ summary: true, ok: false, error: String(err) }) + '\n'); } catch (e) { /* ignore */ }
       app.exit(1);
     });
   } else {

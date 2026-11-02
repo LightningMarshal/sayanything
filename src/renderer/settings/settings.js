@@ -433,6 +433,7 @@
   }
 
   function renderModels(list) {
+    lastModelList = list; // kept so a mid-download progress event can rebuild
     var wrap = $('model-list');
     if (!wrap) return;
     if (!list.length) {
@@ -573,10 +574,8 @@
     }
   }
 
-  // keep the last list so a mid-download progress event can rebuild if needed
+  // the last model list (set by renderModels) so a mid-download progress event can rebuild
   var lastModelList = [];
-  var _renderModels = renderModels;
-  renderModels = function (list) { lastModelList = list; _renderModels(list); };
 
   // -------------------------------------------------------------------------
   // Dictionary

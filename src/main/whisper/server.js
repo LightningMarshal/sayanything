@@ -56,9 +56,7 @@ function portFree(port) {
 
 async function findFreePort(start) {
   for (let p = start; p <= start + PORT_PROBE_SPAN; p++) {
-    /* eslint-disable no-await-in-loop */
     if (await portFree(p)) return p;
-    /* eslint-enable no-await-in-loop */
   }
   throw new Error('no free port in range ' + start + '-' + (start + PORT_PROBE_SPAN));
 }
@@ -68,7 +66,7 @@ function portOpen(port) {
   return new Promise(function (resolve) {
     const sock = new net.Socket();
     let done = false;
-    function finish(v) { if (done) return; done = true; try { sock.destroy(); } catch (e) {} resolve(v); }
+    function finish(v) { if (done) return; done = true; try { sock.destroy(); } catch (e) { /* ignore */ } resolve(v); }
     sock.setTimeout(1500);
     sock.once('connect', function () { finish(true); });
     sock.once('timeout', function () { finish(false); });
@@ -185,10 +183,8 @@ class WhisperServer extends EventEmitter {
       if (this._exited) {
         throw new Error('whisper-server exited during startup (code ' + this._exitCode + ') — check the model file and logs');
       }
-      /* eslint-disable no-await-in-loop */
       if (await portOpen(port)) return;
       await delay(300);
-      /* eslint-enable no-await-in-loop */
     }
     throw new Error('whisper-server did not become ready within ' + READY_TIMEOUT_MS + 'ms');
   }
@@ -249,7 +245,7 @@ class WhisperServer extends EventEmitter {
       child.once('exit', done);
       try { child.kill(); } catch (e) { done(); }
       // Safety net in case the exit event is missed.
-      const t = setTimeout(function () { try { child.kill(); } catch (e) {} done(); }, 4000);
+      const t = setTimeout(function () { try { child.kill(); } catch (e) { /* ignore */ } done(); }, 4000);
       if (t.unref) t.unref();
     });
   }

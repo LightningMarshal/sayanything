@@ -148,11 +148,11 @@ app.whenReady().then(async function () {
   // Create BOTH windows up front. Destroying a window and then creating +
   // loading a new one makes the new loadFile reject with ERR_FAILED on this
   // Electron/Windows build, so keep both alive until the very end.
-  let settingsWin = null;
-  let overlayWin = null;
+  let settingsWin;
+  let overlayWin;
   try {
     fs.mkdirSync(OUT_DIR, { recursive: true });
-    try { fs.writeFileSync(LOG_FILE, ''); } catch (e) {}
+    try { fs.writeFileSync(LOG_FILE, ''); } catch (e) { /* ignore */ }
     logStep('ready');
 
     settingsWin = makeWindow(900, 640);
@@ -166,8 +166,8 @@ app.whenReady().then(async function () {
     logStep('overlay captured');
 
     logStep('capture-screens: done');
-    try { if (settingsWin) settingsWin.destroy(); } catch (e) {}
-    try { if (overlayWin) overlayWin.destroy(); } catch (e) {}
+    try { if (settingsWin) settingsWin.destroy(); } catch (e) { /* ignore */ }
+    try { if (overlayWin) overlayWin.destroy(); } catch (e) { /* ignore */ }
     app.exit(0);
   } catch (err) {
     logStep('capture-screens FAILED: ' + (err && err.stack || err));

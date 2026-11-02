@@ -94,6 +94,7 @@ eq(format(''), '', 'empty: empty string');
 eq(format('    '), '', 'empty: whitespace-only');
 eq(format(null), '', 'empty: null -> empty');
 eq(format(undefined), '', 'empty: undefined -> empty');
+// @ts-expect-error deliberate non-string input
 eq(format(12345), '', 'empty: non-string -> empty');
 eq(format('  [inaudible]  '), '', 'empty: only an artifact -> empty');
 
@@ -103,6 +104,7 @@ eq(format('hello', {}, function (s) { return s.toUpperCase(); }), 'HELLO ',
    'ext: supplied hook rewrites cleaned text');
 eq(format('hello', {}, function () { throw new Error('boom'); }), 'Hello ',
    'ext: a throwing hook never breaks formatting');
+// @ts-expect-error deliberate non-string hook return
 eq(format('hello', {}, function () { return 42; }), 'Hello ',
    'ext: non-string hook return is ignored');
 
@@ -121,6 +123,7 @@ eq(formatPartial('one new line two'), 'One new line two', 'partial: no voice-com
 eq(formatPartial('line one\nline two'), 'Line one line two', 'partial: existing newlines flattened to spaces');
 eq(formatPartial(''), '', 'partial: empty -> empty');
 eq(formatPartial(null), '', 'partial: null -> empty');
+// @ts-expect-error deliberate non-string input
 eq(formatPartial(42), '', 'partial: non-string -> empty');
 
 // ---- summary -----------------------------------------------------------------

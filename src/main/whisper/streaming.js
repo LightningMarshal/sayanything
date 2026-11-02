@@ -103,7 +103,7 @@ function tick() {
  *          onPartial:(sessionId:number, text:string)=>void}} opts
  */
 function start(opts) {
-  opts = opts || {};
+  opts = opts || /** @type {typeof opts} */ ({});
   if (opts.sessionId == null || typeof opts.onPartial !== 'function') return;
   stop(); // never run two drivers at once
   active = {

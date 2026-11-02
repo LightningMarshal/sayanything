@@ -1,0 +1,19 @@
+{
+  // Type-check the JavaScript with TypeScript (no build step, no emitted files).
+  // Types come from JSDoc comments; `npm run typecheck` runs `tsc -p .`.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2023",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2023", "DOM", "DOM.AsyncIterable"],
+    "types": ["node"],
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/main/**/*.js", "src/preload/**/*.js", "test/*-test.js", "scripts/*.js"]
+}

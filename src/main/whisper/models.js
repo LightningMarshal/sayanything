@@ -179,7 +179,7 @@ async function download(name, onProgress) {
     // disk failure is never misreported as a user cancellation.
     if (streamErr) throw streamErr;
     if (controller.signal.aborted || (e && e.name === 'AbortError')) {
-      const err = new Error('download cancelled: ' + name);
+      const err = /** @type {Error & {cancelled?: boolean}} */ (new Error('download cancelled: ' + name));
       err.cancelled = true;
       throw err;
     }
