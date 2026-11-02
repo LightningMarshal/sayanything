@@ -37,7 +37,7 @@
     "lint": "eslint .",
     "typecheck": "tsc -p .",
     "check": "npm run lint && npm run typecheck && npm test",
-    "test:electron": "electron test/overlay-css-check.js && electron test/settings-models-check.js && electron test/welcome-perms-check.js && electron test/pad-check.js && electron test/csp-check.js",
+    "test:electron": "electron test/overlay-css-check.js && electron test/settings-models-check.js && electron test/welcome-perms-check.js && electron test/pad-check.js && electron test/csp-check.js && electron test/settings-tabs-check.js",
     "test:e2e": "test/e2e-transcribe.sh",
     "test:e2e:partial": "test/partial-transcribe.sh"
   },
