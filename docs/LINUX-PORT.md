@@ -106,10 +106,10 @@ sessions (manual test matrix, or a GNOME/KDE VM in CI later).
 
 - **L1.** Answered: SteamOS (KDE Plasma, Wayland) and Ubuntu (GNOME, Wayland).
 - **L2.** Answered by the market check: ship prebuilt in a Flatpak/AppImage.
-- **L3.** Is "the text is copied, press Ctrl+V" an acceptable fallback when
-  the RemoteDesktop portal is refused or unavailable?
-- **L4.** Is the default Linux hotkey allowed to be a chord (for example
-  Super+Space), since bare-modifier shortcuts may not be supported by portals?
+- **L3.** Answered: yes. When the RemoteDesktop portal is refused or
+  unavailable, the text is left on the clipboard with a "press Ctrl+V" notice.
+- **L4.** Answered: yes. The default Linux hotkey may be a chord (for example
+  Super+Space) where the portal does not accept a bare modifier.
 
 ## Sources (November 2026)
 
