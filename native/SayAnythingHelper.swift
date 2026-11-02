@@ -1007,8 +1007,8 @@ final class Helper {
 
         case "paste":
             let text = asString(obj["text"]) ?? ""
-            var restoreMs = asInt(obj["restoreMs"]) ?? 300
-            if restoreMs < 0 { restoreMs = 0 }
+            // Clamped to the settings range so a bad value can't stall injection.
+            let restoreMs = min(max(asInt(obj["restoreMs"]) ?? 300, 0), 60000)
             injectQueue.async { [weak self] in self?.doPaste(text: text, restoreMs: restoreMs) }
 
         case "type":
@@ -1024,8 +1024,8 @@ final class Helper {
             let text = asString(obj["text"]) ?? ""
             let x = asInt(obj["x"]) ?? 0
             let y = asInt(obj["y"]) ?? 0
-            var restoreMs = asInt(obj["restoreMs"]) ?? 300
-            if restoreMs < 0 { restoreMs = 0 }
+            // Clamped to the settings range so a bad value can't stall injection.
+            let restoreMs = min(max(asInt(obj["restoreMs"]) ?? 300, 0), 60000)
             injectQueue.async { [weak self] in self?.doPlaceAt(x: x, y: y, text: text, restoreMs: restoreMs) }
 
         case "pickPoint":

@@ -310,6 +310,17 @@ static class SayAnythingHelper
 
     // ---- Command dispatch ------------------------------------------------
 
+    // Clipboard-restore delay from a command, clamped to the settings range
+    // (0-60000 ms) so a bad value can never stall the injection thread.
+    // NaN and infinities fall back to the 300 ms default.
+    static int ClampMs(double v)
+    {
+        if (double.IsNaN(v) || double.IsInfinity(v)) return 300;
+        if (v < 0) return 0;
+        if (v > 60000) return 60000;
+        return (int)v;
+    }
+
     static void HandleCommand(string line)
     {
         object parsed = new JsonParser(line).Parse();
@@ -374,8 +385,7 @@ static class SayAnythingHelper
             int restoreMs = 300;
             object r;
             obj.TryGetValue("restoreMs", out r);
-            if (r is double) restoreMs = (int)(double)r;
-            if (restoreMs < 0) restoreMs = 0;
+            if (r is double) restoreMs = ClampMs((double)r);
             EnqueueJob(0, text, restoreMs);
         }
         else if (cmd == "type")
@@ -410,8 +420,7 @@ static class SayAnythingHelper
             int x = 0, y = 0, restoreMs = 300;
             obj.TryGetValue("x", out ox); if (ox is double) x = (int)(double)ox;
             obj.TryGetValue("y", out oy); if (oy is double) y = (int)(double)oy;
-            obj.TryGetValue("restoreMs", out r); if (r is double) restoreMs = (int)(double)r;
-            if (restoreMs < 0) restoreMs = 0;
+            obj.TryGetValue("restoreMs", out r); if (r is double) restoreMs = ClampMs((double)r);
             EnqueueJob(3, text, restoreMs, x, y);
         }
         else if (cmd == "pickPoint")
@@ -1224,8 +1233,13 @@ static class SayAnythingHelper
     // Dictionary<string,object> / List<object> / string / double / bool / null.
     class JsonParser
     {
+        // Real commands nest at most 2 levels. A deeper input would recurse until a
+        // StackOverflowException, which .NET cannot catch: the helper would die and
+        // the hotkey with it. Anything deeper than this is dropped (parsed as null).
+        const int MAX_DEPTH = 32;
         readonly string s;
         int i;
+        int depth;
 
         public JsonParser(string str)
         {
@@ -1254,8 +1268,14 @@ static class SayAnythingHelper
             SkipWs();
             if (i >= s.Length) return null;
             char c = s[i];
-            if (c == '{') return ParseObject();
-            if (c == '[') return ParseArray();
+            if (c == '{' || c == '[')
+            {
+                if (depth >= MAX_DEPTH) { i = s.Length; return null; } // too deep: drop the rest
+                depth++;
+                object nested = (c == '{') ? (object)ParseObject() : ParseArray();
+                depth--;
+                return nested;
+            }
             if (c == '"') return ParseString();
             if (c == 't' || c == 'f') return ParseBool();
             if (c == 'n') { Skip(4); return null; }
