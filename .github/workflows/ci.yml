@@ -33,9 +33,11 @@ jobs:
       - name: Unit and state-machine tests
         run: npm test
       - name: Install Mono (C# compiler)
-        run: sudo apt-get update -q && sudo apt-get install -y -q mono-mcs mono-devel
+        run: sudo apt-get update -q && sudo apt-get install -y -q mono-mcs mono-devel mono-runtime
       - name: Windows helper compiles under C# 5
         run: scripts/check-helper-cs.sh
+      - name: Fuzz the Windows helper's JSON command parser (Mono)
+        run: scripts/fuzz-helper-json.sh
 
   renderers:
     name: Renderer checks in Electron (Linux, Xvfb)

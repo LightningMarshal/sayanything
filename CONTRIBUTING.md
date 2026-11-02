@@ -21,6 +21,7 @@ npm run check                 # lint (ESLint) + typecheck (tsc --checkJs) + npm 
 npm test                      # plain-node tests: formatter, rewrite sanitizer, WAV, VAD, streaming,
                               #   hotkey matching, settings defaults, state machine, hash pins, docs drift
 scripts/check-helper-cs.sh    # compile-check the Windows helper under C# 5 with Mono (Linux/macOS)
+scripts/fuzz-helper-json.sh   # fuzz the Windows helper's JSON command parser with Mono
 npm run smoke                 # electron . --smoke: headless self-test (settings, helper, binaries, server boot)
 npm run test:electron         # renderer checks that need Electron
 node test/helper-selftest.js  # compiles + drives the real native helper end to end (Windows or macOS)
