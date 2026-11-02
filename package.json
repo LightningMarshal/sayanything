@@ -33,7 +33,7 @@
     "prep": "node scripts/stage-bundle.js",
     "dist:dir": "npm run prep && electron-builder --dir",
     "dist": "npm run prep && electron-builder",
-    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js",
+    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js && node test/state-test.js",
     "test:electron": "electron test/overlay-css-check.js && electron test/settings-models-check.js && electron test/welcome-perms-check.js",
     "test:e2e": "test/e2e-transcribe.sh",
     "test:e2e:partial": "test/partial-transcribe.sh"
