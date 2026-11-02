@@ -23,7 +23,8 @@
   // small helpers
   // -------------------------------------------------------------------------
 
-  function $(id) { return document.getElementById(id); }
+  /** @param {string} id @returns {FormField} */
+  function $(id) { return /** @type {FormField} */ (document.getElementById(id)); }
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function noop() {}
 
