@@ -447,6 +447,14 @@
     }
   }
 
+  // Create an element with a class and text content (never markup).
+  function el(tag, className, text) {
+    var e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
   function modelCard(m) {
     var isEn = /\.en$/.test(m.name);
     var card = document.createElement('div');
@@ -455,12 +463,9 @@
 
     var main = document.createElement('div');
     main.className = 'model-main';
-    main.innerHTML =
-      '<span class="model-name"></span>' +
-      (m.recommended ? '<span class="model-rec">Recommended</span>' : '') +
-      '<span class="model-badge ' + (isEn ? 'en' : '') + '"></span>';
-    main.querySelector('.model-name').textContent = m.name;
-    main.querySelector('.model-badge').textContent = isEn ? 'English' : 'Multilingual';
+    main.appendChild(el('span', 'model-name', m.name));
+    if (m.recommended) main.appendChild(el('span', 'model-rec', 'Recommended'));
+    main.appendChild(el('span', 'model-badge' + (isEn ? ' en' : ''), isEn ? 'English' : 'Multilingual'));
 
     var meta = document.createElement('div');
     meta.className = 'model-meta';

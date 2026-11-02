@@ -170,14 +170,19 @@
     return '…' + t.slice(t.length - n);
   }
 
-  function setMsg(html) {
-    if (msg) msg.innerHTML = html;
+  // The pill message is built with DOM nodes and textContent only, never
+  // innerHTML, so dictated text or an error message can never become markup.
+  function setMsg(text) {
+    if (!msg) return;
+    msg.textContent = text || '';
   }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  function setLabel(text) {
+    if (!msg) return;
+    var span = document.createElement('span');
+    span.className = 'label';
+    span.textContent = text;
+    msg.textContent = '';
+    msg.appendChild(span);
   }
 
   // Live partial transcript (display-only). textContent — NEVER innerHTML:
@@ -221,7 +226,7 @@
 
       case 'transcribing':
         stopLoop();
-        setMsg('<span class="label">Transcribing…</span>');
+        setLabel('Transcribing…');
         pill.setAttribute('data-state', 'transcribing');
         break;
 
@@ -229,31 +234,32 @@
       // spinner, distinct label — so no new overlay CSS/redesign is needed.
       case 'rewriting':
         stopLoop();
-        setMsg('<span class="label">Polishing…</span>');
+        setLabel('Polishing…');
         pill.setAttribute('data-state', 'transcribing');
         break;
 
       case 'success':
         stopLoop();
-        setMsg(escapeHtml(tail(detail.text, 40)) || '<span class="label">Inserted</span>');
+        var said = tail(detail.text, 40);
+        if (said) setMsg(said); else setLabel('Inserted');
         pill.setAttribute('data-state', 'success');
         break;
 
       case 'cancelled':
         stopLoop();
-        setMsg('<span class="label">Cancelled</span>');
+        setLabel('Cancelled');
         pill.setAttribute('data-state', 'cancelled');
         break;
 
       case 'nothing-heard':
         stopLoop();
-        setMsg('<span class="label">Didn’t catch that</span>');
+        setLabel('Didn’t catch that');
         pill.setAttribute('data-state', 'nothing-heard');
         break;
 
       case 'error':
         stopLoop();
-        setMsg(escapeHtml(tail(detail.message || 'Something went wrong', 44)));
+        setMsg(tail(detail.message || 'Something went wrong', 44));
         pill.setAttribute('data-state', 'error');
         break;
 
