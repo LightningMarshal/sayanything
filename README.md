@@ -57,7 +57,7 @@ Not sure which box has focus? Don't want it typing into the wrong window? Hold *
 - **Warm mic.** Keeps a tiny rolling buffer so if you start talking a beat before you hit the key, your first word still makes it.
 - **Smart formatting.** Punctuation, filler removal (um, uh), spoken commands (say "new line" or "new paragraph"), auto-caps, and it strips the junk Whisper sometimes emits. All toggleable.
 - **Custom dictionary.** Feed it names and jargon so it stops mangling them.
-- **Local history (opt-in).** Off by default. Turn it on in Settings and it keeps your last 200 transcriptions, click to copy, as a local (unencrypted) JSON file.
+- **Local history (opt-in).** Off by default. Turn it on in Settings and it keeps your last 200 transcriptions, click to copy. The file is encrypted with your OS account's keystore (Windows DPAPI, macOS Keychain), so other accounts, backups and synced folders can't read it.
 - **Private because of how it's built,** not because of a checkbox. Audio stays in memory, Whisper runs on `127.0.0.1` only, zero network calls at runtime.
 
 ## Say Anything vs Wispr Flow

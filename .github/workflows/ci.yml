@@ -54,6 +54,8 @@ jobs:
         run: native\build.cmd
       - name: Helper self-test
         run: node test/helper-selftest.js
+      - name: History is encrypted with the real OS keystore (DPAPI)
+        run: npx electron test/history-electron-check.js
 
   macos:
     name: macOS helper build + tests

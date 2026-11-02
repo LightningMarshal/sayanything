@@ -66,7 +66,7 @@ module.exports = {
 ```
 
 `settings.js` API: `get()` (whole object), `set(partial)` (deep-merge, persist, emit), `onChange(cb)`. Stored at `<USER_DATA>/settings.json`.
-`history.js` API: `add({text, ms, app})`, `list()`, `remove(id)`, `clear()`. Stored at `<USER_DATA>/history.json`, capped at `history.max`, no-op when disabled.
+`history.js` API: `add({text, ms, app})`, `list()`, `remove(id)`, `clear()`, `isEncrypted()`. Stored at `<USER_DATA>/history.json`, capped at `history.max`, no-op when disabled (and when settings cannot be read: fail closed). With an OS keystore the file is `{"v":2,"encrypted":true,"data":"<base64 safeStorage ciphertext>"}`; a legacy plain array is migrated on the next write; an undecryptable file is moved aside as `history.unreadable-<stamp>.json`. Loaded lazily (safeStorage needs app `ready`).
 
 ## Helper protocol (JSON lines over stdio, UTF-8)
 

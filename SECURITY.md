@@ -21,8 +21,10 @@ Known limits, stated plainly:
   drop-pad copies carry the Windows clipboard-history / cloud-clipboard opt-out
   formats and the macOS concealed/transient pasteboard types. Third-party
   clipboard managers may ignore these markers.
-- **History.** When enabled, dictation history is stored unencrypted in the app's
-  data folder. It is off by default.
+- **History.** Off by default. When enabled it is encrypted at rest with the OS
+  keystore (Electron safeStorage: DPAPI on Windows, Keychain on macOS). Where no
+  real keystore exists (Linux without a keyring) it is stored as plain JSON with
+  owner-only permissions and a warning is logged.
 
 ## Reporting a vulnerability
 
