@@ -1,7 +1,7 @@
 #!/bin/bash
-# Build SaySomethingHelper (macOS) from native/SaySomethingHelper.swift.
+# Build SayAnythingHelper (macOS) from native/SayAnythingHelper.swift.
 #
-# Produces bin/helper/SaySomethingHelper: a single-file, dependency-free
+# Produces bin/helper/SayAnythingHelper: a single-file, dependency-free
 # command-line tool (no app bundle) compiled with the swiftc that ships with
 # Xcode, then ad-hoc codesigned so it has a stable identity for TCC (Input
 # Monitoring / Accessibility grants attach to a code identity).
@@ -24,9 +24,9 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$HERE/SaySomethingHelper.swift"
+SRC="$HERE/SayAnythingHelper.swift"
 OUTDIR="$HERE/../bin/helper"
-OUT="$OUTDIR/SaySomethingHelper"
+OUT="$OUTDIR/SayAnythingHelper"
 DEPLOY_TARGET="13.0"
 
 if [ ! -f "$SRC" ]; then

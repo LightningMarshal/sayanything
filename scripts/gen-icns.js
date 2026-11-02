@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * gen-icns.js — build assets/SaySomething.icns from
- * assets/SaySomething.png using ONLY macOS built-in tools: `sips` (resize) and
+ * gen-icns.js — build assets/SayAnything.icns from
+ * assets/SayAnything.png using ONLY macOS built-in tools: `sips` (resize) and
  * `iconutil` (iconset -> icns). No npm deps, no network, no Electron relaunch
  * needed (unlike scripts/gen-icon.js, which needs a BrowserWindow to rasterize
  * the SVG — this script only resamples an already-rasterized PNG).
@@ -10,7 +10,7 @@
  * darwin only. Run: node scripts/gen-icns.js
  *
  * Apple's standard iconset needs images up to 1024x1024 (icon_512x512@2x) for
- * a crisp Retina/Dock/Finder icon. assets/SaySomething.png is 256x256 (see
+ * a crisp Retina/Dock/Finder icon. assets/SayAnything.png is 256x256 (see
  * gen-icon.js), so anything above 256px is produced by upscaling the source
  * with sips's Lanczos resampler — soft, but graceful, and still yields a valid,
  * complete .icns. Re-render wisp.svg at a higher resolution later (e.g. bump
@@ -24,8 +24,8 @@ const os = require('os');
 const { spawnSync } = require('child_process');
 
 const ASSETS_DIR = path.join(__dirname, '..', 'assets');
-const PNG_SRC = path.join(ASSETS_DIR, 'SaySomething.png');
-const ICNS_OUT = path.join(ASSETS_DIR, 'SaySomething.icns');
+const PNG_SRC = path.join(ASSETS_DIR, 'SayAnything.png');
+const ICNS_OUT = path.join(ASSETS_DIR, 'SayAnything.icns');
 
 // macOS iconset naming convention: [file name, pixel size].
 const ICONSET_SIZES = [
@@ -76,8 +76,8 @@ function main() {
   }
   const maxSrc = Math.max(srcW, srcH);
 
-  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'saysomething-icns-'));
-  const iconset = path.join(tmpRoot, 'SaySomething.iconset');
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'sayanything-icns-'));
+  const iconset = path.join(tmpRoot, 'SayAnything.iconset');
   fs.mkdirSync(iconset, { recursive: true });
 
   const upscaled = new Set();

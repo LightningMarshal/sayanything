@@ -1,4 +1,4 @@
-// SaySomethingHelper.exe — native helper for SaySomething (local-first Windows voice dictation).
+// SayAnythingHelper.exe — native helper for SayAnything (local-first Windows voice dictation).
 //
 // Persistent child process spoken to by the Electron main process over
 // stdin/stdout using a JSON-lines protocol (see docs/CONTRACTS.md).
@@ -31,7 +31,7 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
-static class SaySomethingHelper
+static class SayAnythingHelper
 {
     // ---- Win32 constants -------------------------------------------------
 

@@ -506,7 +506,7 @@ function padDropAt(x, y) {
   // macOS: the pad had focus during the drag, so the moment it hides, AppKit
   // re-activates another of OUR windows (Settings) — asynchronously, often right
   // after the helper's click focused the drop target — and the paste lands back
-  // in Say Something. Hiding the whole app removes us from that fight: a hidden
+  // in Say Anything. Hiding the whole app removes us from that fight: a hidden
   // app cannot re-activate itself, so the target keeps focus for the paste.
   // app.show() afterward restores our windows WITHOUT taking focus.
   let electronApp = null;

@@ -1,5 +1,5 @@
 /*
- * SaySomething settings.
+ * SayAnything settings.
  *
  * Consumes the shared aurora-dark tokens from ../shared/theme.css. Each token is
  * referenced with a SPEC-accurate fallback so the window still looks right if the

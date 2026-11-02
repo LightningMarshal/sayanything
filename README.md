@@ -1,14 +1,14 @@
 <div align="center">
 
-# Say Something
+# Say Anything
 
-*You're sitting there quiet all day. Say Something.*
+*You're sitting there quiet all day. Say Anything.*
 
 ### Free, local transcription. Talk anywhere, drop anywhere.
 
-**Say Something** lets you talk instead of type. Hold **Right Ctrl** (Windows) or **Right Cmd** (Mac) in any app, say your thing, let go, and the cleaned-up text drops in at your cursor about a second later. It runs 100% on your machine. Free, open-source, no account, no cloud, no subscription, no telemetry. None of that.
+**Say Anything** lets you talk instead of type. Hold **Right Ctrl** (Windows) or **Right Cmd** (Mac) in any app, say your thing, let go, and the cleaned-up text drops in at your cursor about a second later. It runs 100% on your machine. Free, open-source, no account, no cloud, no subscription, no telemetry. None of that.
 
-[![CI](https://github.com/bluejacketblackhawk/saysomething/actions/workflows/ci.yml/badge.svg)](https://github.com/bluejacketblackhawk/saysomething/actions/workflows/ci.yml)
+[![CI](https://github.com/LightningMarshal/sayanything/actions/workflows/ci.yml/badge.svg)](https://github.com/LightningMarshal/sayanything/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-5EEAD4.svg)](LICENSE)
 [![100% local](https://img.shields.io/badge/100%25-local-67E8F9.svg)](#privacy)
 [![No cloud](https://img.shields.io/badge/cloud-none-A78BFA.svg)](#privacy)
@@ -16,25 +16,25 @@
 
 <br />
 
-<img src="assets/demo.gif" alt="Say Something: talk, catch your words in the floating drop pad, and drag them into any text box" width="720" />
+<img src="assets/demo.gif" alt="Say Anything: talk, catch your words in the floating drop pad, and drag them into any text box" width="720" />
 
 <em>Catch your words in the floating pad, then drag it onto any field and let go. I haven't found another dictation tool that lets you aim.</em>
 
 <br /><br />
 
-<img src="assets/screenshots/overlay-listening.png" alt="Say Something overlay pill, listening, with a live aurora waveform" width="620" />
+<img src="assets/screenshots/overlay-listening.png" alt="Say Anything overlay pill, listening, with a live aurora waveform" width="620" />
 
 <em>The little pill while it's listening. Live waveform and a timer, so you know it's actually on.</em>
 
 <br /><br />
 
-<img src="assets/screenshots/settings.png" alt="Say Something settings window, General tab" width="760" />
+<img src="assets/screenshots/settings.png" alt="Say Anything settings window, General tab" width="760" />
 
 <em>Settings: rebind the hotkey, grab models, dictionary, history, formatting. All local.</em>
 
 <br /><br />
 
-<img src="assets/screenshots/settings-rewrite.png" alt="Say Something settings window, Rewrite tab, with the local Ollama model picker" width="760" />
+<img src="assets/screenshots/settings-rewrite.png" alt="Say Anything settings window, Rewrite tab, with the local Ollama model picker" width="760" />
 
 <em>The Rewrite tab: optional AI polish that runs locally through Ollama. Off by default, and if it flakes it just gives you your original words back.</em>
 
@@ -57,14 +57,14 @@ Not sure which box has focus? Don't want it typing into the wrong window? Hold *
 - **Warm mic.** Keeps a tiny rolling buffer so if you start talking a beat before you hit the key, your first word still makes it.
 - **Smart formatting.** Punctuation, filler removal (um, uh), spoken commands (say "new line" or "new paragraph"), auto-caps, and it strips the junk Whisper sometimes emits. All toggleable.
 - **Custom dictionary.** Feed it names and jargon so it stops mangling them.
-- **Local history.** Last 200 transcriptions, click to copy, stored as a local JSON file. Turn it off if you want.
+- **Local history (opt-in).** Off by default. Turn it on in Settings and it keeps your last 200 transcriptions, click to copy, as a local (unencrypted) JSON file.
 - **Private because of how it's built,** not because of a checkbox. Audio stays in memory, Whisper runs on `127.0.0.1` only, zero network calls at runtime.
 
-## Say Something vs Wispr Flow
+## Say Anything vs Wispr Flow
 
-Straight up: Wispr Flow is a polished paid product and it does some things Say Something doesn't chase. The whole point here is it runs entirely on your machine and you can read every line of it.
+Straight up: Wispr Flow is a polished paid product and it does some things Say Anything doesn't chase. The whole point here is it runs entirely on your machine and you can read every line of it.
 
-| | **Say Something** | **Wispr Flow** |
+| | **Say Anything** | **Wispr Flow** |
 |---|---|---|
 | Price | Free, open-source (MIT) | Subscription |
 | Transcription | On your machine (whisper.cpp) | Their cloud |
@@ -85,8 +85,8 @@ You can have it hand each finished dictation to a local model for one last polis
 
 - **Off by default.** None of this happens until you turn it on in **Settings → Rewrite**.
 - **Runs on [Ollama](https://ollama.com),** a free local model runner you install once. Pull a model (`ollama pull llama3.2`) and it shows up in the picker.
-- **Stays on your machine.** It talks to Ollama on `127.0.0.1:11434` and nowhere else. That address is hard-coded, not a setting. Nothing hits any cloud, and no network call happens at all unless you turn rewrite on.
-- **Never loses your words.** Each rewrite gets 10 seconds. If the model is slow, down, or spits out garbage, you just get your original text.
+- **Stays on your machine.** It talks to Ollama on `127.0.0.1:11434` by default. You can point it at another local server (LM Studio, vLLM, anything OpenAI-compatible), but the app refuses any address that isn't loopback (`localhost`, `127.x.x.x`, `::1`) and refuses redirects, so a transcript can't be sent off the machine by a setting or a redirect. No network call happens at all unless you turn rewrite on.
+- **Never loses your words.** Each rewrite gets 10 seconds. If the model is slow, down, spits out garbage, or returns something far shorter than what you said, you just get your original text. Commentary the model tacks on ("I fixed the grammar") is stripped, but only when those words aren't ones you actually dictated.
 
 ## Requirements
 
@@ -134,7 +134,7 @@ Both of these bundle Whisper, the helper, and the default `small.en` model right
 
 ```powershell
 npm run dist:dir   # portable app -> dist\win-unpacked\  (also zipped)
-npm run dist       # installer   -> dist\SaySomething-Setup-<version>.exe
+npm run dist       # installer   -> dist\SayAnything-Setup-<version>.exe
 ```
 
 Heads up: `npm run dist` (the installer) needs **Windows Developer Mode** on (Settings → Privacy & security → For developers → Developer Mode). electron-builder unpacks a signing toolkit that has some macOS symlinks in it, and making symlinks on Windows needs that permission. The portable `dist:dir` build doesn't need it. Builds are unsigned, so first launch you'll get a SmartScreen "unknown publisher" nag (More info → Run anyway) until it's code-signed.
@@ -145,7 +145,7 @@ On a Mac the same two commands make a `.dmg` and a `.zip` for both Apple Silicon
 
 An Electron shell (main is CommonJS, the windows are plain HTML/CSS/JS, no bundler, no framework) plus two small local native bits:
 
-- **The input helper.** One tiny native program per platform, both talking the same JSON-over-stdio protocol. On Windows it's a C# helper compiled at setup by Windows' own `csc.exe` ([`native/SaySomethingHelper.cs`](native/SaySomethingHelper.cs)); on Mac it's a Swift helper built by `swiftc` ([`native/SaySomethingHelper.swift`](native/SaySomethingHelper.swift)). It watches only your hotkey, does the clipboard-swap paste and unicode typing, and reports the frontmost app. You can read every line. It's never downloaded.
+- **The input helper.** One tiny native program per platform, both talking the same JSON-over-stdio protocol. On Windows it's a C# helper compiled at setup by Windows' own `csc.exe` ([`native/SayAnythingHelper.cs`](native/SayAnythingHelper.cs)); on Mac it's a Swift helper built by `swiftc` ([`native/SayAnythingHelper.swift`](native/SayAnythingHelper.swift)). It watches only your hotkey, does the clipboard-swap paste and unicode typing, and reports the frontmost app. You can read every line. It's never downloaded.
 - **whisper-server.** From whisper.cpp v1.9.1, kept warm on `127.0.0.1:8737`. Transcription is a local `POST` to `/inference`. On Mac it's built from source as one universal binary; on Apple Silicon it uses Metal so transcription runs on the GPU, and on Intel it runs on the CPU (Accelerate).
 
 **Zero runtime npm dependencies.** Downloads use Node's built-in `fetch`, unzipping uses Windows' own `tar.exe`.
@@ -159,15 +159,17 @@ Privacy here isn't a setting, it's how the thing is built.
 - **The keyboard hook only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing.
 - **Audio only lives in memory** and never hits disk. The WAV exists just long enough to POST to the local server.
 - **Whisper binds `127.0.0.1` only.** With AI rewrite off (the default), there are zero network calls at runtime, period.
-- **The optional rewrite only talks to localhost.** If (and only if) you turn it on, it POSTs to Ollama on `127.0.0.1:11434`. That address is hard-coded. No cloud, ever.
-- **The only time it uses the internet** is grabbing models and binaries at setup (GitHub and Hugging Face), and it tells you on the console.
+- **The optional rewrite only talks to localhost.** If (and only if) you turn it on, it POSTs to a local model server (Ollama on `127.0.0.1:11434` by default). The endpoint is configurable, but any non-loopback address is refused in code. No cloud, ever.
+- **The only times it uses the internet** are when setup grabs models and binaries (GitHub and Hugging Face, announced on the console) and when you download a model yourself from the **Model** tab. Nothing else.
+- **Download integrity, honestly.** The Windows whisper binary zip and the default `small.en` model are checked against pinned SHA-256 digests. The other models in the catalog are size-checked but not yet hash-pinned (that's being fixed). On Mac, whisper is built from the `v1.9.1` source tag.
+- **Clipboard caveat.** Pasting works by briefly putting your text on the clipboard, then restoring what was there. Today that means clipboard history (Win+V), cloud clipboard sync, and clipboard-manager apps can record each dictation. Keeping dictations out of those is in progress. If that matters to you, turn off clipboard history while dictating sensitive text.
 - **The helper is compiled on your machine** from source that's checked in (`csc.exe` on Windows, `swiftc` on Mac). The binary is never downloaded.
 
 ## Troubleshooting and FAQ
 
 **Mic permission denied.** Windows can block mic access per app. Open **Settings → Privacy & security → Microphone** (or paste `ms-settings:privacy-microphone` into Run) and make sure desktop apps can use the mic. Restart the app.
 
-**Mac: hotkey does nothing / nothing pastes.** macOS gates global hotkeys behind **Input Monitoring** and text insertion behind **Accessibility** (System Settings → Privacy & Security). The first-run screen walks you through both, plus the mic. If you granted them and it still sits there, toggle the app off and on in those two panes (macOS caches grants per binary) and restart Say Something.
+**Mac: hotkey does nothing / nothing pastes.** macOS gates global hotkeys behind **Input Monitoring** and text insertion behind **Accessibility** (System Settings → Privacy & Security). The first-run screen walks you through both, plus the mic. If you granted them and it still sits there, toggle the app off and on in those two panes (macOS caches grants per binary) and restart Say Anything.
 
 **Port 8737 is busy.** It binds the whisper server to `127.0.0.1:8737`, and if that's taken it probes up through **8747** and grabs the first free one. Nothing for you to do unless all of them are busy, then free one up and restart.
 
@@ -175,7 +177,7 @@ Privacy here isn't a setting, it's how the thing is built.
 
 **A model download got interrupted.** Downloads go to a `.part` file and only get renamed once the full size checks out, so a half-download won't get mistaken for a real one. Just re-run it (Model tab, or `node scripts/setup.js --model <name>`).
 
-**My antivirus flagged SaySomethingHelper.exe.** False positive. Some AVs freak out at any freshly compiled, unsigned exe that sets a keyboard hook. The full source is in [`native/SaySomethingHelper.cs`](native/SaySomethingHelper.cs) and it's compiled **on your machine** by Windows' own `csc.exe`, nothing downloaded. Read it, then allow-list `bin/helper/SaySomethingHelper.exe` if your AV keeps eating it.
+**My antivirus flagged SayAnythingHelper.exe.** False positive. Some AVs freak out at any freshly compiled, unsigned exe that sets a keyboard hook. The full source is in [`native/SayAnythingHelper.cs`](native/SayAnythingHelper.cs) and it's compiled **on your machine** by Windows' own `csc.exe`, nothing downloaded. Read it, then allow-list `bin/helper/SayAnythingHelper.exe` if your AV keeps eating it.
 
 **Hands-free stopped while I was still thinking.** In tap-to-latch mode it auto-stops when you go quiet. If it's cutting you off, bump the silence window up in **Settings → Hotkey** (up to 5 s) or just turn auto-stop off there. Hold-to-talk never auto-stops, hold as long as you want.
 
@@ -191,10 +193,6 @@ Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code's
 
 > Regenerating the screenshots: `npx electron scripts/capture-screens.js` renders the pill and both settings tabs to `assets/screenshots/`.
 
-## Support
-
-Say Something is free forever, but you can [buy me a coffee ☕](https://ko-fi.com/bluejacketblackhawk). (It's not actually coffee. It's a secret second thing.)
-
 ## License
 
-[MIT](LICENSE) © Say Something contributors.
+[MIT](LICENSE) © Say Anything contributors. Say Anything is a fork of an earlier MIT-licensed project; its original copyright notice is kept in [LICENSE](LICENSE).

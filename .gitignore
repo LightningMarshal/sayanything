@@ -3,13 +3,13 @@ node_modules
 
 # Setup-generated artifacts (scripts/setup.js)
 #   bin/whisper  — unpacked whisper-server/whisper-cli binaries + DLLs
-#   bin/helper   — compiled SaySomethingHelper.exe (source native/SaySomethingHelper.cs IS committed)
+#   bin/helper   — compiled SayAnythingHelper.exe (source native/SayAnythingHelper.cs IS committed)
 bin
 
 # Cached third-party downloads (whisper-bin-x64 release zip)
 third_party/*.zip
 
-# Logs (runtime logs live in %APPDATA%/SaySomething/logs; this covers any stray local ones)
+# Logs (runtime logs live in %APPDATA%/SayAnything/logs; this covers any stray local ones)
 logs
 *.log
 

@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * SaySomething VAD — energy-based voice-activity detector for latched auto-stop.
+ * SayAnything VAD — energy-based voice-activity detector for latched auto-stop.
  * Consumed by audio.js in the overlay renderer, and
  * unit-tested in plain node (test/vad-test.js) — hence the dual UMD-lite export.
  *
@@ -172,5 +172,5 @@
   var api = { createVad: createVad, DEFAULTS: DEFAULTS };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  if (root) root.SaySomethingVad = api;
+  if (root) root.SayAnythingVad = api;
 })(typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : this));

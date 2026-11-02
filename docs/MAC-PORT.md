@@ -1,8 +1,8 @@
-# Say Something, macOS port guide
+# Say Anything, macOS port guide
 
-How to recreate Say Something on macOS. Read `docs/HANDOFF.md` first for the overall architecture.
+How to recreate Say Anything on macOS. Read `docs/HANDOFF.md` first for the overall architecture.
 
-**The big picture:** the app is deliberately structured so that **one native binary holds all of the OS-level integration** (`native/SaySomethingHelper.cs`), and it talks to the JS main process over a **JSON-lines-over-stdio protocol**. Everything above that line is portable. So the port is:
+**The big picture:** the app is deliberately structured so that **one native binary holds all of the OS-level integration** (`native/SayAnythingHelper.cs`), and it talks to the JS main process over a **JSON-lines-over-stdio protocol**. Everything above that line is portable. So the port is:
 
 1. **Rewrite exactly one thing deeply:** the C# Windows helper becomes a macOS helper that speaks the *same* stdio protocol.
 2. **Swap a handful of constants and the packaging.**
@@ -24,7 +24,7 @@ Do not rewrite the app. Rewrite the helper.
 - **Electron + electron-builder** themselves.
 
 ### Must change
-- `native/SaySomethingHelper.cs` (the whole file) → the macOS helper. **This is the real work.** See §2.
+- `native/SayAnythingHelper.cs` (the whole file) → the macOS helper. **This is the real work.** See §2.
 - `native/build.cmd` → a mac build step (or ship a prebuilt binary). See §5.
 - `src/main/config.js` constants (binary names, tar, whisper zip, data dir). See §5.
 - `src/main/whisper/binaries.js` (`.dll`/`.exe` assumptions). See §5.
@@ -103,7 +103,7 @@ Because the app needs to **swallow** the hotkey (so "T" doesn't type through) **
 
 ## 5. Constants and small JS edits
 
-- `src/main/config.js`: `BIN_HELPER`/`BIN_WHISPER` names lose `.exe`; `CSC` (csc path) unused; `TAR` → `/usr/bin/tar` (mac bsdtar) or just `unzip`; `WHISPER_ZIP_URL`/`HASHES` → a **Darwin arm64/x64 whisper.cpp build** (or build from source, see §7); `resolveUserData()` → `~/Library/Application Support/SaySomething` (Electron's `getPath('appData')` already resolves; only the plain-node `process.env.APPDATA` fallback needs a mac branch).
+- `src/main/config.js`: `BIN_HELPER`/`BIN_WHISPER` names lose `.exe`; `CSC` (csc path) unused; `TAR` → `/usr/bin/tar` (mac bsdtar) or just `unzip`; `WHISPER_ZIP_URL`/`HASHES` → a **Darwin arm64/x64 whisper.cpp build** (or build from source, see §7); `resolveUserData()` → `~/Library/Application Support/SayAnything` (Electron's `getPath('appData')` already resolves; only the plain-node `process.env.APPDATA` fallback needs a mac branch).
 - `src/main/helper.js`: the compile-on-missing path (`process.env.ComSpec || 'cmd.exe'`, `BUILD_CMD = .../build.cmd`) is cmd-specific. Simplest: **ship the mac helper prebuilt** and skip compile-on-demand on mac (branch on `process.platform`).
 - `src/main/whisper/binaries.js`: `.dylib` not `.dll`, no `.exe`, and the "which members to keep" filter changes; `serverExe()`/`isReady()` drop the `.exe`.
 - `src/main/tray.js`: "Start with Windows" → "Start at login"; tooltip copy. `setLoginItemSettings` is cross-platform in Electron but behaves differently on mac (ignores `path`), verify.
@@ -121,12 +121,12 @@ Add a `mac` target to `package.json` `build`:
     { "target": "dmg", "arch": ["arm64", "x64"] },
     { "target": "zip", "arch": ["arm64", "x64"] }
   ],
-  "icon": "assets/SaySomething.icns",
+  "icon": "assets/SayAnything.icns",
   "category": "public.app-category.productivity",
   "hardenedRuntime": true,
   "entitlements": "build/entitlements.mac.plist",
   "entitlementsInherit": "build/entitlements.mac.inherit.plist",
-  "extendInfo": { "NSMicrophoneUsageDescription": "Say Something transcribes your voice on your Mac." }
+  "extendInfo": { "NSMicrophoneUsageDescription": "Say Anything transcribes your voice on your Mac." }
 }
 ```
 - Keep `extraResources` shipping the **mac** `bin/` (the whisper-server binary + the Swift helper), not the Windows tree. Resolve at runtime with `process.resourcesPath` when `app.isPackaged`. `chmod 0o755` the binaries (afterPack hook) so they can be spawned.
@@ -190,8 +190,8 @@ export APPLE_TEAM_ID="ABCDE12345"
 ### Build + verify
 ```
 npm run dist    # electron-builder: sign -> notarize (notarytool) -> staple  =>  a notarized .dmg + .zip
-spctl --assess --verbose --type exec "dist/mac/Say Something.app"
-xcrun stapler validate "dist/mac/Say Something.app"
+spctl --assess --verbose --type exec "dist/mac/Say Anything.app"
+xcrun stapler validate "dist/mac/Say Anything.app"
 ```
 That is the whole signing story for this account: install the cert, set three env vars, run the build, ship the notarized `.dmg`. Same shape as the Windows release, just a `.dmg`.
 

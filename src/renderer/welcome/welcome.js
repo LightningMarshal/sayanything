@@ -1,6 +1,6 @@
 'use strict';
 
-/* SaySomething first-run welcome + (on macOS) the permissions onboarding.
+/* SayAnything first-run welcome + (on macOS) the permissions onboarding.
  *
  * ONE renderer, two modes, chosen by the preload's platform flag:
  *   - no bridge / non-darwin -> the plain intro card. The button just closes the
@@ -15,7 +15,7 @@
  */
 
 (function () {
-  var api = window.saysomething || null;
+  var api = window.sayanything || null;
   var darwin = !!(api && api.platform === 'darwin');
 
   var intro = document.getElementById('intro');
@@ -73,7 +73,7 @@
     refresh();
 
     // Debug hook (harmless in production; used by test/welcome-perms-check.js).
-    window.__saysomethingWelcome = { render: render, refresh: refresh };
+    window.__sayanythingWelcome = { render: render, refresh: refresh };
   }
 
   function request(kind) {

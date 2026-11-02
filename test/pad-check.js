@@ -26,7 +26,7 @@ async function checkRender() {
   const js = [
     '(function(){',
     '  var evil = "<img src=x onerror=alert(1)>";',
-    '  window.__saysomethingPad.show(evil + " hello world");',
+    '  window.__sayanythingPad.show(evil + " hello world");',
     '  var pad = document.getElementById("pad");',
     '  var text = document.getElementById("text");',
     '  return {',

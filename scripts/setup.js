@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * SaySomething setup — idempotent installer.
+ * SayAnything setup — idempotent installer.
  *
  * Steps (each safe to re-run):
  *   [1] Windows: unpack whisper binaries from the third_party cache (or download
@@ -16,7 +16,7 @@
  *   [4] Self-check: boot whisper-server with a local model (if any) and confirm
  *       it becomes reachable, then print a status matrix.
  *
- * Network: this script is the ONLY part of SaySomething that touches the internet —
+ * Network: this script is the ONLY part of SayAnything that touches the internet —
  * whisper binaries from GitHub (Windows only), models from Hugging Face. It says so below.
  *
  * Flags: --model <name> | --model=<name> | --no-model | -h/--help
@@ -207,7 +207,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) { printHelp(); process.exit(0); }
 
-  console.log('SaySomething setup — idempotent installer');
+  console.log('SayAnything setup — idempotent installer');
   console.log('Network: downloads whisper binaries from GitHub and models from Hugging Face ONLY.');
   console.log('');
 

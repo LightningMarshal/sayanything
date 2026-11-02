@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Preload for the DROP PAD renderer. Exposes window.saysomething = { send, on, invoke }
+ * Preload for the DROP PAD renderer. Exposes window.sayanything = { send, on, invoke }
  * with only the pad channels whitelisted. Inlined channel names (sandboxed
  * preloads can't require local modules) — keep in sync with src/main/ipc.js (PAD).
  */
@@ -16,13 +16,13 @@ function makeBridge(sendCh, onCh, invokeCh) {
   return {
     send: function (channel, payload) {
       if (sendCh.indexOf(channel) === -1) {
-        throw new Error('saysomething: send channel not allowed: ' + channel);
+        throw new Error('sayanything: send channel not allowed: ' + channel);
       }
       ipcRenderer.send(channel, payload);
     },
     on: function (channel, callback) {
       if (onCh.indexOf(channel) === -1) {
-        throw new Error('saysomething: on channel not allowed: ' + channel);
+        throw new Error('sayanything: on channel not allowed: ' + channel);
       }
       const listener = function (_event, payload) { callback(payload); };
       ipcRenderer.on(channel, listener);
@@ -30,11 +30,11 @@ function makeBridge(sendCh, onCh, invokeCh) {
     },
     invoke: function (channel, payload) {
       if (invokeCh.indexOf(channel) === -1) {
-        return Promise.reject(new Error('saysomething: invoke channel not allowed: ' + channel));
+        return Promise.reject(new Error('sayanything: invoke channel not allowed: ' + channel));
       }
       return ipcRenderer.invoke(channel, payload);
     },
   };
 }
 
-contextBridge.exposeInMainWorld('saysomething', makeBridge(SEND, ON, INVOKE));
+contextBridge.exposeInMainWorld('sayanything', makeBridge(SEND, ON, INVOKE));

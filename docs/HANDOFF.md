@@ -1,10 +1,9 @@
-# Say Something, project overview
+# Say Anything, project overview
 
 Free, local voice dictation for Windows and macOS. Hold a key, talk, and your words show up at your cursor. Runs 100% on-device (whisper.cpp), no account, no cloud, no telemetry. The differentiator is the **drop pad**: catch your words in a floating puck and drag it onto any text box to drop them exactly where you want.
 
-- **Repo:** https://github.com/bluejacketblackhawk/saysomething
-- **Current release:** v0.2.0 (installer + portable). v0.1.0 was the first public launch.
-- **Owner:** bluejacketblackhawk (`bluejacketblackhawk@proton.me`)
+- **Repo:** https://github.com/LightningMarshal/sayanything
+- **Current version:** 0.2.0 (no Say Anything release published yet).
 
 ---
 
@@ -12,7 +11,7 @@ Free, local voice dictation for Windows and macOS. Hold a key, talk, and your wo
 
 - **Electron.** Main process is CommonJS; renderers are vanilla HTML/CSS/JS (no framework, no bundler). **Zero runtime npm deps** (only Electron + electron-builder as dev deps). Keep it that way.
 - **Transcription:** self-hosted `whisper.cpp` `whisper-server.exe` (v1.9.1) on `127.0.0.1:8737`, `POST /inference` multipart. Model `small.en` is bundled so it works offline out of the box.
-- **Native input:** a self-compiled C# helper (`SaySomethingHelper.exe`) does the global keyboard/mouse hooks and text injection. It is compiled by the .NET Framework `csc.exe` that ships with Windows, which is **C# 5 only**, no string interpolation, pattern matching, tuples, `out var`, etc.
+- **Native input:** a self-compiled C# helper (`SayAnythingHelper.exe`) does the global keyboard/mouse hooks and text injection. It is compiled by the .NET Framework `csc.exe` that ships with Windows, which is **C# 5 only**, no string interpolation, pattern matching, tuples, `out var`, etc.
 - **Privacy is the product.** Nothing leaves the machine. The one network exception (optional AI rewrite) is hard-gated to loopback (see below). Do not add cloud anything.
 - **Voice/brand:** informal, no em dashes in user-facing copy. Aurora palette (cyan/teal/violet), **never orange**. Logo is a voice waveform, never an "S"/monogram.
 
@@ -27,13 +26,13 @@ Electron main (src/main)                     Renderers (src/renderer)
   helper.js      supervises the C# helper       settings/  the settings window
   windows.js     all BrowserWindows             welcome/   first-run greeting
   ipc.js         channel names + preload allowlists
-  config.js      paths (%APPDATA%/SaySomething, bundled resources)
+  config.js      paths (%APPDATA%/SayAnything, bundled resources)
   hotkey-match.js  pure combo-modifier matching (unit-tested)
   stores/        settings.js, history.js  (JSON on disk, atomic writes)
   whisper/       server.js, client.js, streaming.js, formatter.js, rewrite.js, models.js
                                              src/preload/  per-window context-bridge preloads
 
-native/SaySomethingHelper.cs   WH_KEYBOARD_LL + WH_MOUSE_LL hooks, SendInput injection,
+native/SayAnythingHelper.cs   WH_KEYBOARD_LL + WH_MOUSE_LL hooks, SendInput injection,
                                clipboard, foreground window, JSON-lines over stdio
 bin/                           whisper-server.exe + the compiled helper (git-ignored; built/staged)
 build-resources/models/        bundled ggml-small.en.bin
@@ -61,11 +60,11 @@ node test/helper-selftest.js   # spawns the helper, checks the stdio protocol (C
 **Cutting a release**
 ```
 # bump "version" in package.json, then:
-npm run dist           # -> dist/SaySomething-Setup-<ver>.exe (NSIS) + dist/win-unpacked/
+npm run dist           # -> dist/SayAnything-Setup-<ver>.exe (NSIS) + dist/win-unpacked/
 # portable zip is a manual zip of dist/win-unpacked:
-#   Compress-Archive dist/win-unpacked/* -> dist/SaySomething-<ver>-win-x64-portable.zip
-gh release create v<ver> -R bluejacketblackhawk/saysomething -t "..." -F notes.md \
-  dist/SaySomething-Setup-<ver>.exe dist/SaySomething-<ver>-win-x64-portable.zip
+#   Compress-Archive dist/win-unpacked/* -> dist/SayAnything-<ver>-win-x64-portable.zip
+gh release create v<ver> -R LightningMarshal/sayanything -t "..." -F notes.md \
+  dist/SayAnything-Setup-<ver>.exe dist/SayAnything-<ver>-win-x64-portable.zip
 ```
 Both artifacts are **unsigned**, so Windows SmartScreen says "unknown publisher" (More info → Run anyway). Code signing is unbought; see roadmap.
 
@@ -82,9 +81,9 @@ Both artifacts are **unsigned**, so Windows SmartScreen says "unknown publisher"
 
 ## Roadmap / open items
 
-- **macOS port** — DONE (Apple Silicon + Intel). The Swift helper (`native/SaySomethingHelper.swift`) speaks the same stdio protocol as the C# one (Windows-VK translation at the boundary, so settings stay portable), whisper.cpp builds locally with Metal (`scripts/build-whisper-mac.sh`), first-run TCC onboarding lives in the welcome window, and electron-builder makes a dmg+zip per arch. The two native binaries (the Swift helper and whisper-server) are universal (arm64 + x86_64 via lipo), so the one bundled `bin/` tree runs on both; the Intel whisper slice is CPU/Accelerate (no Metal). Guide: `docs/MAC-PORT.md`, pinned decisions: `docs/MAC-PORT-ADDENDUM.md`. Remaining: a live hands-on dictation pass after granting TCC, and Developer ID signing/notarization (steps in MAC-PORT.md §8).
+- **macOS port** — DONE (Apple Silicon + Intel). The Swift helper (`native/SayAnythingHelper.swift`) speaks the same stdio protocol as the C# one (Windows-VK translation at the boundary, so settings stay portable), whisper.cpp builds locally with Metal (`scripts/build-whisper-mac.sh`), first-run TCC onboarding lives in the welcome window, and electron-builder makes a dmg+zip per arch. The two native binaries (the Swift helper and whisper-server) are universal (arm64 + x86_64 via lipo), so the one bundled `bin/` tree runs on both; the Intel whisper slice is CPU/Accelerate (no Metal). Guide: `docs/MAC-PORT.md`, pinned decisions: `docs/MAC-PORT-ADDENDUM.md`. Remaining: a live hands-on dictation pass after granting TCC, and Developer ID signing/notarization (steps in MAC-PORT.md §8).
 - **Code signing** — Windows (SmartScreen) and macOS (Gatekeeper/notarization) both show "unknown/unidentified developer" while unsigned. Buying certs removes the scare screens.
-- **Social preview / launch** — social banner is set; Ko-fi tip link is in the README.
+- **Branding assets** — the demo GIF, screenshots and social preview still show the old product name and need regenerating (`scripts/capture-screens.js`).
 
 ## Docs
 

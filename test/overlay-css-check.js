@@ -29,8 +29,8 @@ app.whenReady().then(async function () {
 
   const js = [
     '(function(){',
-    '  var o = window.__saysomethingOverlay;',
-    '  if(!o) return {err:"no __saysomethingOverlay hook"};',
+    '  var o = window.__sayanythingOverlay;',
+    '  if(!o) return {err:"no __sayanythingOverlay hook"};',
     '  o.applyState("listening", { t0: 1 });',   // enter listening
     '  o.vad(true, 0.05);',                        // auto-stop armed, ~no silence yet
     '  o.partial("the quick brown fox");',         // live words arrive

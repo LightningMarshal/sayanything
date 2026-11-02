@@ -1,4 +1,4 @@
-# Say Something — module contracts & file map
+# Say Anything — module contracts & file map
 
 Read `docs/SPEC.md` first. This file is the integration authority: exact file map, module interfaces, IPC channels, helper protocol, settings schema. Keep implementations in sync with these contracts.
 
@@ -7,7 +7,7 @@ Read `docs/SPEC.md` first. This file is the integration authority: exact file ma
 | Module | Files |
 |---|---|
 | Core / boot | `package.json`, `.gitignore`, `README.md`, `assets/wisp.svg`, `src/main/main.js` (boot skeleton), `src/main/config.js`, `src/main/log.js`, `src/main/ipc.js`, `src/preload/overlay.js`, `src/preload/settings.js` |
-| Native helper | `native/SaySomethingHelper.cs`, `native/build.cmd`, `src/main/helper.js`, `test/helper-selftest.js` |
+| Native helper | `native/SayAnythingHelper.cs`, `native/build.cmd`, `src/main/helper.js`, `test/helper-selftest.js` |
 | Audio | `src/renderer/overlay/audio.js`, `src/renderer/overlay/worklet.js`, `src/main/audio-session.js`, `test/wav-test.js` |
 | Whisper engine | `src/main/whisper/models.js`, `src/main/whisper/binaries.js`, `src/main/whisper/server.js`, `src/main/whisper/client.js`, `src/main/whisper/formatter.js`, `scripts/setup.js`, `test/formatter-test.js`, `test/e2e-transcribe.ps1` |
 | Overlay UI | `src/renderer/overlay/index.html`, `src/renderer/overlay/overlay.css`, `src/renderer/overlay/overlay.js`, `src/renderer/shared/theme.css` |
@@ -20,13 +20,13 @@ Conventions: keep zero runtime dependencies; Windows paths via `path.join`; Comm
 
 ```js
 module.exports = {
-  APP_NAME: 'Say Something',
-  USER_DATA: ..,            // app.getPath('userData')  (%APPDATA%/Say Something)
+  APP_NAME: 'Say Anything',
+  USER_DATA: ..,            // app.getPath('userData')  (%APPDATA%/Say Anything)
   MODELS_DIR: ..,           // <USER_DATA>/models
   LOGS_DIR: ..,             // <USER_DATA>/logs
   BIN_WHISPER: ..,          // <repo>/bin/whisper  (whisper-server.exe, whisper-cli.exe, *.dll)
-  BIN_HELPER: ..,           // <repo>/bin/helper/SaySomethingHelper.exe
-  HELPER_SRC: ..,           // <repo>/native/SaySomethingHelper.cs
+  BIN_HELPER: ..,           // <repo>/bin/helper/SayAnythingHelper.exe
+  HELPER_SRC: ..,           // <repo>/native/SayAnythingHelper.cs
   THIRD_PARTY: ..,          // <repo>/third_party
   WHISPER_ZIP_CACHE: 'whisper-bin-x64-v1.9.1.zip',
   WHISPER_ZIP_URL: 'https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.1/whisper-bin-x64.zip',
@@ -55,7 +55,7 @@ module.exports = {
   "streaming": { "enabled": true },
   "autoStop": { "enabled": true, "silenceMs": 2000 },
   "overlay": { "chime": true, "offsetY": 48 },
-  "history": { "enabled": true, "max": 200 },
+  "history": { "enabled": false, "max": 200 },
   "launchAtLogin": false,
   "paused": false,
   "whisperPort": 8737,
@@ -93,13 +93,13 @@ Helper → Electron (`{"evt": ...}`):
 
 Overlay renderer — incoming (main→renderer): `overlay:state` `{state, detail}` where state ∈ `hidden|listening|transcribing|rewriting|success|cancelled|error|nothing-heard` (detail: `{t0}` for listening, `{text}` for success, `{message}` for error); `overlay:partial` `{sessionId, text}` (live interim transcript, shown in the `listening` pill as `has-partial`, display-only — never injected/stored; `overlay.js` writes it via `textContent` and ignores partials outside the `listening` state); `audio:start` `{deviceId, preRollMs, warm}`; `audio:stop` `{sessionId}`; `audio:abort` `{sessionId}`; `audio:vad` `{sessionId, enabled, silenceMs}` (arm/disarm latched auto-stop — main sends `enabled:true` only when a tap latches AND `autoStop.enabled`).
 Outgoing (renderer→main): `audio:chunk` `{sessionId, buf /* ArrayBuffer PCM16 16k mono */}`; `audio:started` `{sessionId}`; `audio:stopped` `{sessionId}`; `audio:error` `{message}`; `audio:silence` `{sessionId}` (VAD detected end-of-speech; main treats it exactly like a second tap, ONLY if that session is still recording+latched and auto-stop is enabled — stray/late events ignored).
-Note: main assigns `sessionId` and includes it in `audio:start`. Levels never cross IPC — `audio.js` dispatches `window` CustomEvent `saysomething:level` `{detail:{rms}}` ~30/s while capturing; `overlay.js` listens. The latched auto-stop VAD (`src/renderer/overlay/vad.js`, a pure module also unit-tested in `test/vad-test.js`) consumes those same worklet levels — no second analysis path — and, while armed, `audio.js` dispatches `saysomething:vad` `{detail:{active, progress /*0..1*/}}` so `overlay.js` dims the pill toward the cutoff (the `listening` pill gets `data-vad="on"` + a `--vad` var; opacity-only, no new overlay state). `audio.js` also handles chime playback (WebAudio synth, respects `overlay.chime` passed in `audio:start` as `{chime}`); two-tone up = start, down = stop, low = cancel.
+Note: main assigns `sessionId` and includes it in `audio:start`. Levels never cross IPC — `audio.js` dispatches `window` CustomEvent `sayanything:level` `{detail:{rms}}` ~30/s while capturing; `overlay.js` listens. The latched auto-stop VAD (`src/renderer/overlay/vad.js`, a pure module also unit-tested in `test/vad-test.js`) consumes those same worklet levels — no second analysis path — and, while armed, `audio.js` dispatches `sayanything:vad` `{detail:{active, progress /*0..1*/}}` so `overlay.js` dims the pill toward the cutoff (the `listening` pill gets `data-vad="on"` + a `--vad` var; opacity-only, no new overlay state). `audio.js` also handles chime playback (WebAudio synth, respects `overlay.chime` passed in `audio:start` as `{chime}`); two-tone up = start, down = stop, low = cancel.
 
-Drop pad renderer — main→pad: `pad:show` `{text}` (show the pad with this text). pad→main: `pad:move` `{x,y}` (drag-follow — main `movePad`s the window), `pad:place` `{x,y}` (drop — main hides the pad, `helper.placeAt` clicks + pastes at the release point), `pad:copy` (re-copy), `pad:dismiss` (close). Preload `src/preload/pad.js` exposes `window.saysomething` whitelisting exactly these (ipc.js `PAD`). The pad window (`windows.createPad`/`showPad`/`hidePad`/`movePad`/`getPadWC`) is focusable + movable (unlike the click-through overlay).
+Drop pad renderer — main→pad: `pad:show` `{text}` (show the pad with this text). pad→main: `pad:move` `{x,y}` (drag-follow — main `movePad`s the window), `pad:place` `{x,y}` (drop — main hides the pad, `helper.placeAt` clicks + pastes at the release point), `pad:copy` (re-copy), `pad:dismiss` (close). Preload `src/preload/pad.js` exposes `window.sayanything` whitelisting exactly these (ipc.js `PAD`). The pad window (`windows.createPad`/`showPad`/`hidePad`/`movePad`/`getPadWC`) is focusable + movable (unlike the click-through overlay).
 
 Settings renderer — `invoke` style: `settings:get` · `settings:set(partial)` · `models:list` → `[{name, sizeMB, note, recommended, downloaded, active}]` (`note` = plain-English pick guidance, `recommended` = the first-day default small.en) · `models:download(name)` / `models:cancel(name)` · `history:list` / `history:remove(id)` / `history:clear` · `app:info` → `{version, whisper:{running, model, port}, helper:{running}}` · `hotkey:capture` → resolves `{vk, name}` · `whisper:restart`.
 Events (main→settings): `models:progress` `{name, pct, bytes, total}` · `whisper:status` `{running, model, port}` · `settings:changed` `{settings}`.
-Preload bridge shape (both preloads): `window.saysomething = { send(ch,p), on(ch,cb), invoke(ch,p) }` — each whitelists only its channels.
+Preload bridge shape (both preloads): `window.sayanything = { send(ch,p), on(ch,cb), invoke(ch,p) }` — each whitelists only its channels.
 
 ## Whisper module APIs
 
@@ -117,7 +117,7 @@ Preload bridge shape (both preloads): `window.saysomething = { send(ch,p), on(ch
 ## Windows/tray/overlay creation (E: windows.js, tray.js)
 
 `windows.js`: `createOverlay()` — frameless, transparent, alwaysOnTop('screen-saver'), `focusable:false`, `skipTaskbar`, click-through (`setIgnoreMouseEvents(true)`), sized ~320×72, positioned bottom-center of primary display minus `overlay.offsetY`, hidden by `showInactive()`/`hide()` from state (`overlay:state` hidden ⇒ hide window; anything else ⇒ showInactive). The overlay window ALWAYS exists (hosts mic/worklet even when hidden — `show:false` at create). `createSettings()` — normal window 900×640, dark bg, opened from tray; single instance. `getOverlayWC()`/`getSettingsWC()` accessors.
-`tray.js`: programmatic RGBA `nativeImage` (16/32px cyan-violet wisp dot; use `scripts/gen-icon.js` PNG if present), menu: Paused ✓toggle / Settings… / Start with Windows ✓ / Quit. Tooltip "Say Something. Hold Right Ctrl to talk." (live hotkey name).
+`tray.js`: programmatic RGBA `nativeImage` (16/32px cyan-violet wisp dot; use `scripts/gen-icon.js` PNG if present), menu: Paused ✓toggle / Settings… / Start with Windows ✓ / Quit. Tooltip "Say Anything. Hold Right Ctrl to talk." (live hotkey name).
 
 ## main.js + state.js
 

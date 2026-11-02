@@ -7,11 +7,11 @@ It supplements `docs/MAC-PORT.md` and `docs/CONTRACTS.md`. Where they conflict, 
 
 | Area | Files |
 |---|---|
-| **helper** | `native/SaySomethingHelper.swift` (new), `native/build-mac.sh` (new), `test/helper-selftest.js` (mac-compat edits) |
+| **helper** | `native/SayAnythingHelper.swift` (new), `native/build-mac.sh` (new), `test/helper-selftest.js` (mac-compat edits) |
 | **whisper-build** | `scripts/build-whisper-mac.sh` (new), stages `bin/whisper/whisper-server` (gitignored) |
 | **js-platform** | `src/main/config.js`, `src/main/helper.js`, `src/main/whisper/binaries.js`, `src/main/whisper/server.js`, `src/main/tray.js`, `src/main/windows.js`, `src/main/stores/settings.js`, `scripts/setup.js`, `src/renderer/settings/settings.js` (only if VK/mod display needs platform names) |
 | **permissions** | `src/main/permissions.js` (new), `src/main/main.js`, `src/main/ipc.js`, `src/preload/welcome.js` (new or edit), `src/renderer/welcome/*` |
-| **packaging** | `package.json`, `build-resources/entitlements.mac.plist` (new), `build-resources/entitlements.mac.inherit.plist` (new), `scripts/stage-bundle.js`, `scripts/gen-icns.js` (new), `assets/SaySomething.icns` (generated) |
+| **packaging** | `package.json`, `build-resources/entitlements.mac.plist` (new), `build-resources/entitlements.mac.inherit.plist` (new), `scripts/stage-bundle.js`, `scripts/gen-icns.js` (new), `assets/SayAnything.icns` (generated) |
 | **tests-scripts** | `test/e2e-transcribe.sh` (new), `test/partial-transcribe.sh` (new), other `test/*.js` mac-compat |
 
 
@@ -63,13 +63,13 @@ Windows defaults unchanged. Saved settings still deep-merge over these.
 
 ## Binary names / layout on mac
 
-- Helper: `bin/helper/SaySomethingHelper` (no .exe), built by `native/build-mac.sh`
-  from `native/SaySomethingHelper.swift` (swiftc, single file, arm64, no app bundle).
+- Helper: `bin/helper/SayAnythingHelper` (no .exe), built by `native/build-mac.sh`
+  from `native/SayAnythingHelper.swift` (swiftc, single file, arm64, no app bundle).
 - Whisper: `bin/whisper/whisper-server` (static, Metal-embedded, arm64,
   MACOSX_DEPLOYMENT_TARGET=13.0), built by `scripts/build-whisper-mac.sh`.
   No `.dll`s; static link means whisper-server is the ONLY file needed in bin/whisper.
 - `config.js` exposes the same constant names (`BIN_HELPER`, `BIN_WHISPER`, …) with
-  platform-appropriate values. User data on mac: `~/Library/Application Support/SaySomething`.
+  platform-appropriate values. User data on mac: `~/Library/Application Support/SayAnything`.
 - On darwin, `binaries.ensure()` does NOT download (no official mac server binaries);
   it verifies `bin/whisper/whisper-server` exists and is executable, else errors with
   "run scripts/build-whisper-mac.sh".

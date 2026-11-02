@@ -1,5 +1,5 @@
 /* =============================================================================
- * SaySomething — drop pad ("aurora wisp")
+ * SayAnything — drop pad ("aurora wisp")
  * The pad window is frameless + transparent; only the card paints. The grip is a
  * drag region (moves the window); buttons are no-drag. GPU-friendly, NO orange.
  * ========================================================================== */

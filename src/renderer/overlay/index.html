@@ -7,7 +7,7 @@
        blob: for the AudioWorklet / chime that audio.js owns. No network. -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none'; script-src 'self' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob: data:; connect-src 'self';" />
-  <title>SaySomething overlay</title>
+  <title>SayAnything overlay</title>
   <link rel="stylesheet" href="../shared/theme.css" />
   <link rel="stylesheet" href="overlay.css" />
 </head>
@@ -48,7 +48,7 @@
 
   <!-- vad.js: pure energy-based auto-stop detector (loads before audio.js) -->
   <script src="vad.js"></script>
-  <!-- audio.js owns getUserMedia + worklet registration + chime + saysomething:level -->
+  <!-- audio.js owns getUserMedia + worklet registration + chime + sayanything:level -->
   <script src="audio.js"></script>
   <!-- overlay.js drives the pill; must load last -->
   <script src="overlay.js"></script>

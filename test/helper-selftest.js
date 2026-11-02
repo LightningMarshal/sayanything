@@ -5,10 +5,10 @@
  *
  * Exercises the real native helper end to end. Two platform paths:
  *
- *  - Windows: drives src/main/helper.js (compiles SaySomethingHelper.exe via
+ *  - Windows: drives src/main/helper.js (compiles SayAnythingHelper.exe via
  *    native/build.cmd if missing), then ping / paste / type / foreground / copy.
  *
- *  - macOS: spawns bin/helper/SaySomethingHelper directly (building it via
+ *  - macOS: spawns bin/helper/SayAnythingHelper directly (building it via
  *    native/build-mac.sh if missing) and speaks the JSON-lines protocol itself,
  *    so the test does not depend on the JS config/helper layer being ported yet.
  *    It verifies: ready, ping/pong, a perms event, a clipboard round-trip
@@ -53,7 +53,7 @@ async function runDarwin() {
   const fs = require('fs');
   const path = require('path');
 
-  const BIN = path.join(__dirname, '..', 'bin', 'helper', 'SaySomethingHelper');
+  const BIN = path.join(__dirname, '..', 'bin', 'helper', 'SayAnythingHelper');
   const BUILD = path.join(__dirname, '..', 'native', 'build-mac.sh');
 
   // Build on demand (dev checkout) if the binary is missing.
@@ -170,7 +170,7 @@ async function runDarwin() {
 
   // 4. clipboard round-trip
   try {
-    const sentinel = 'saysomething-selftest-clip-' + process.pid;
+    const sentinel = 'sayanything-selftest-clip-' + process.pid;
     const res = await request('copied', { cmd: 'clipboard', text: sentinel }, 5000);
     if (process.env.CI) {
       check('clipboard -> ok (read-back skipped in CI)', res && res.ok === true, res && res.err ? res.err : '');
@@ -195,7 +195,7 @@ async function runDarwin() {
 
   // 6. paste into nothing: ok when AX granted, else the clean AX error.
   try {
-    const res = await request('pasted', { cmd: 'paste', text: 'SaySomething selftest ', restoreMs: 60 }, 6000);
+    const res = await request('pasted', { cmd: 'paste', text: 'SayAnything selftest ', restoreMs: 60 }, 6000);
     const axGranted = lastPerms ? lastPerms.ax : false;
     let ok;
     let detail;
@@ -252,7 +252,7 @@ async function runWindows() {
 
   // 3. paste round-trip (restore clipboard quickly)
   try {
-    const res = await helper.paste('SaySomething selftest ', 120);
+    const res = await helper.paste('SayAnything selftest ', 120);
     check('paste -> ok', res && res.ok === true, res && res.err ? res.err : '');
   } catch (e) {
     check('paste -> ok', false, e && e.message);
@@ -281,7 +281,7 @@ async function runWindows() {
   //    is fine). Locally it verifies the bytes actually landed on the clipboard.
   try {
     const cp = require('child_process');
-    const sentinel = 'saysomething-selftest-clip-' + process.pid;
+    const sentinel = 'sayanything-selftest-clip-' + process.pid;
     const res = await helper.copy(sentinel);
     if (process.env.CI) {
       check('copy -> ok (clipboard read-back skipped in CI)', res && res.ok === true, res && res.err ? res.err : '');

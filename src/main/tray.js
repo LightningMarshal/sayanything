@@ -3,12 +3,12 @@
 /**
  * System tray.
  *
- * Shows the Say Something mark in the notification area (menu bar on macOS) with
+ * Shows the Say Anything mark in the notification area (menu bar on macOS) with
  * a menu: Paused (checkbox) / Settings... / Start with Windows (checkbox) / Quit
  * — the login-item label reads "Start at login" on macOS. A tooltip reflects the
  * live hotkey name. Double-clicking the icon opens Settings.
  *
- * The icon is a nativeImage built from a PNG buffer. If assets/SaySomething.png exists
+ * The icon is a nativeImage built from a PNG buffer. If assets/SayAnything.png exists
  * (produced by scripts/gen-icon.js) it is used; otherwise a small aurora
  * cyan->violet "wisp" orb is drawn programmatically and PNG-encoded with Node's
  * built-in zlib (zero runtime deps). The programmatic RGBA image renders fine as a
@@ -154,7 +154,7 @@ function drawWispPng(size) {
  * @returns {import('electron').NativeImage}
  */
 function buildIcon() {
-  const assetPng = path.join(ASSETS_DIR, 'SaySomething.png');
+  const assetPng = path.join(ASSETS_DIR, 'SayAnything.png');
   try {
     if (fs.existsSync(assetPng)) {
       const img = nativeImage.createFromBuffer(fs.readFileSync(assetPng));
@@ -187,7 +187,7 @@ function tooltipFor(s) {
   // fallback only matters if the name were somehow blank.
   const fallback = IS_MAC ? 'Right Cmd' : 'Right Ctrl';
   const name = (s && s.hotkey && s.hotkey.name) ? s.hotkey.name : fallback;
-  return 'Say Something. Hold ' + name + ' to talk.';
+  return 'Say Anything. Hold ' + name + ' to talk.';
 }
 
 function openSettings() {
@@ -236,7 +236,7 @@ function buildMenu(s) {
     },
     { type: 'separator' },
     {
-      label: 'Quit Say Something',
+      label: 'Quit Say Anything',
       click: function () { app.quit(); },
     },
   ]);

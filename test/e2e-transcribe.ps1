@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Full-loop transcription proof for SaySomething, without a microphone.
+  Full-loop transcription proof for SayAnything, without a microphone.
 
 .DESCRIPTION
   Synthesizes a known sentence to a 16 kHz mono 16-bit WAV using Windows'
@@ -24,10 +24,10 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot  = Split-Path -Parent $PSScriptRoot
 $binServer = Join-Path $repoRoot 'bin\whisper\whisper-server.exe'
-$modelsDir = Join-Path $env:APPDATA 'SaySomething\models'
+$modelsDir = Join-Path $env:APPDATA 'SayAnything\models'
 
 Write-Host ''
-Write-Host '== SaySomething e2e transcription test =='
+Write-Host '== SayAnything e2e transcription test =='
 
 # --- Is a TCP port accepting connections? (server readiness / reachability) ---
 function Test-Port([int]$p) {
@@ -99,7 +99,7 @@ $wavPath = $null
 try {
   # --- 3. Synthesize a known sentence to a 16 kHz mono 16-bit WAV -------------
   $sentence = 'The quick brown fox jumps over the lazy dog.'
-  $wavPath = Join-Path $env:TEMP ('saysomething-e2e-{0}.wav' -f ([Guid]::NewGuid().ToString('N')))
+  $wavPath = Join-Path $env:TEMP ('sayanything-e2e-{0}.wav' -f ([Guid]::NewGuid().ToString('N')))
 
   Add-Type -AssemblyName System.Speech
   $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer

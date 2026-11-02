@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SaySomething live-partial proof (macOS, no microphone) — bash port of
+# SayAnything live-partial proof (macOS, no microphone) — bash port of
 # partial-transcribe.ps1.
 #
 # Proves the streaming approach — windowed re-transcription of a GROWING audio
@@ -54,10 +54,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BIN_SERVER="$REPO_ROOT/bin/whisper/whisper-server"
 # Mirrors src/main/config.js resolveUserData() on darwin (~/Library/Application
-# Support/SaySomething). partial-transcribe.ps1 hardcodes ggml-small.en.bin
+# Support/SayAnything). partial-transcribe.ps1 hardcodes ggml-small.en.bin
 # specifically (rather than "any ggml-*.bin" like e2e-transcribe.ps1) — mirrored
 # here for fidelity.
-MODEL="$HOME/Library/Application Support/SaySomething/models/ggml-small.en.bin"
+MODEL="$HOME/Library/Application Support/SayAnything/models/ggml-small.en.bin"
 SENTENCE='The quick brown fox jumps over the lazy dog.'
 
 # --- Is a TCP port accepting connections? --------------------------------------
@@ -66,14 +66,14 @@ test_port() {
   ( exec 3<>"/dev/tcp/127.0.0.1/$port" ) 2>/dev/null
 }
 
-echo '== SaySomething live-partial (growing-prefix) test (macOS) =='
+echo '== SayAnything live-partial (growing-prefix) test (macOS) =='
 if [[ ! -f "$MODEL" ]]; then
   echo "SKIP: model not found at $MODEL"
   echo '      Run:  node scripts/setup.js'
   exit 0
 fi
 
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/saysomething-partial.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sayanything-partial.XXXXXX")"
 STARTED_PID=""
 EXIT_CODE=0
 

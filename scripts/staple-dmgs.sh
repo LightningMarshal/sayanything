@@ -12,7 +12,7 @@ read -r -p "Apple ID email: " APPLE_ID
 read -r -s -p "App-specific password (input hidden): " PW
 echo
 
-for DMG in dist/SaySomething-*.dmg; do
+for DMG in dist/SayAnything-*.dmg; do
   [ -f "$DMG" ] || continue
   if xcrun stapler validate "$DMG" >/dev/null 2>&1; then echo "already stapled: $DMG"; continue; fi
   echo "notarizing $DMG (quick; content already scanned) ..."

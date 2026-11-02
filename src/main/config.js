@@ -5,7 +5,7 @@
  *
  * Works both inside the Electron main process and in plain-node contexts such as
  * scripts/setup.js and the test scripts, always resolving to the per-user data dir
- * (%APPDATA%/SaySomething on Windows, ~/Library/Application Support/SaySomething on
+ * (%APPDATA%/SayAnything on Windows, ~/Library/Application Support/SayAnything on
  * macOS) so the same locations resolve either way.
  *
  * Every value here is either identical cross-platform or resolved through a single
@@ -17,7 +17,7 @@
 const path = require('path');
 const os = require('os');
 
-const APP_NAME = 'SaySomething';
+const APP_NAME = 'SayAnything';
 const IS_MAC = process.platform === 'darwin';
 
 // config.js lives at <repo>/src/main/config.js → repo root is two levels up.
@@ -43,7 +43,7 @@ const ASSET_ROOT = bundledRoot || REPO_ROOT;
  */
 function resolveUserData() {
   // Anchor on the platform roaming/app-data dir, NOT app.getPath('userData'): the
-  // latter is derived from the lowercase npm package name ('saysomething'), which
+  // latter is derived from the lowercase npm package name ('sayanything'), which
   // would disagree with the plain-node fallback. Joining a fixed APP_NAME keeps both
   // identical. On darwin the roaming dir is ~/Library/Application Support (there is
   // no %APPDATA% — that env var is Windows-only), which is also what Electron's
@@ -66,16 +66,16 @@ const USER_DATA = resolveUserData();
 
 module.exports = {
   APP_NAME: APP_NAME,
-  USER_DATA: USER_DATA,                                   // <appData>/SaySomething
+  USER_DATA: USER_DATA,                                   // <appData>/SayAnything
   MODELS_DIR: path.join(USER_DATA, 'models'),             // <USER_DATA>/models
   LOGS_DIR: path.join(USER_DATA, 'logs'),                 // <USER_DATA>/logs
   // win: whisper-server.exe, whisper-cli.exe, *.dll — darwin: a single static
   // whisper-server (Metal embedded, no dylibs; see whisper/binaries.js).
   BIN_WHISPER: path.join(ASSET_ROOT, 'bin', 'whisper'),
-  // Native helper binary. Loses the .exe on darwin (bin/helper/SaySomethingHelper).
-  BIN_HELPER: path.join(ASSET_ROOT, 'bin', 'helper', IS_MAC ? 'SaySomethingHelper' : 'SaySomethingHelper.exe'),
+  // Native helper binary. Loses the .exe on darwin (bin/helper/SayAnythingHelper).
+  BIN_HELPER: path.join(ASSET_ROOT, 'bin', 'helper', IS_MAC ? 'SayAnythingHelper' : 'SayAnythingHelper.exe'),
   // Helper source: C# on Windows, a single-file Swift tool on darwin.
-  HELPER_SRC: path.join(REPO_ROOT, 'native', IS_MAC ? 'SaySomethingHelper.swift' : 'SaySomethingHelper.cs'),
+  HELPER_SRC: path.join(REPO_ROOT, 'native', IS_MAC ? 'SayAnythingHelper.swift' : 'SayAnythingHelper.cs'),
   // Compile-on-missing build script (dev checkout only): build.cmd (win, via
   // cmd.exe) vs build-mac.sh (darwin, via /bin/bash). See helper.js/setup.js.
   HELPER_BUILD: path.join(REPO_ROOT, 'native', IS_MAC ? 'build-mac.sh' : 'build.cmd'),

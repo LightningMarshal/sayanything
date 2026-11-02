@@ -51,7 +51,7 @@ app.whenReady().then(async function () {
   try {
     // Are we on the darwin onboarding path at all?
     const mode = await win.webContents.executeJavaScript(
-      '(function(){ return { platform: (window.saysomething && window.saysomething.platform) || null,' +
+      '(function(){ return { platform: (window.sayanything && window.sayanything.platform) || null,' +
       ' introHidden: document.getElementById("intro").hidden,' +
       ' permsHidden: document.getElementById("perms").hidden }; })()', true);
     console.log('welcome-perms-check: mode', JSON.stringify(mode));
@@ -81,7 +81,7 @@ app.whenReady().then(async function () {
       '    grantBtns: document.querySelectorAll("#perm-rows .grant").length,' +
       '    startDisabled: !!start.disabled,' +
       '    micLight: light("row-mic"), listenLight: light("row-listen"), axLight: light("row-ax"),' +
-      '    hasDebugHook: !!(window.__saysomethingWelcome && window.__saysomethingWelcome.render),' +
+      '    hasDebugHook: !!(window.__sayanythingWelcome && window.__sayanythingWelcome.render),' +
       '  };' +
       '})()', true);
     console.log('welcome-perms-check: before', JSON.stringify(before));
