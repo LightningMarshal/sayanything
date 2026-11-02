@@ -13,9 +13,10 @@ Known limits, stated plainly:
   default `small.en` model are checked against pinned SHA-256 digests. Other
   catalog models are currently checked for size only. On macOS, whisper.cpp is
   built from a git tag, not a pinned commit. Pinning both is tracked work.
-- **Clipboard.** Text is inserted by a clipboard swap. Until clipboard-history
-  opt-out formats are added, Windows clipboard history, cloud clipboard sync and
-  third-party clipboard managers can capture dictated text.
+- **Clipboard.** Text is inserted by a clipboard swap. The temporary entry and
+  drop-pad copies carry the Windows clipboard-history / cloud-clipboard opt-out
+  formats and the macOS concealed/transient pasteboard types. Third-party
+  clipboard managers may ignore these markers.
 - **History.** When enabled, dictation history is stored unencrypted in the app's
   data folder. It is off by default.
 

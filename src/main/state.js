@@ -473,8 +473,14 @@ function inject(session, st, text, ms, fgPromise) {
 
 // A pad-mode session: auto-copy the text, record history, hand the overlay off to
 // the floating pad. The user then drags it to place (padDropAt) or pastes (Ctrl+V).
+// Drop-pad copies stay out of clipboard history unless the user turned that off.
+function padCopyOpts() {
+  const st = settingsStore.get();
+  return { noHistory: !(st.pad && st.pad.excludeFromClipboardHistory === false) };
+}
+
 function padDeliver(session, text, ms, fgPromise) {
-  return helper.copy(text).then(function () {}, function () {}).then(function () {
+  return helper.copy(text, padCopyOpts()).then(function () {}, function () {}).then(function () {
     return fgPromise.then(function (fg) {
       try { history.add({ text: text, ms: ms, app: (fg && fg.exe) || '' }); }
       catch (e) { log.error('state: history.add failed', e); }
@@ -535,7 +541,7 @@ function padDropAt(x, y) {
 /** Pad "Copy": re-copy the current text to the clipboard. */
 function padCopy() {
   if (!padText) return;
-  helper.copy(padText).then(function () {}, function () {});
+  helper.copy(padText, padCopyOpts()).then(function () {}, function () {});
 }
 
 /** Pad dismiss (✕ / Esc): close the pad and forget its text. */

@@ -301,6 +301,7 @@
     var padName = $('padhotkey-name');
     if (padName) padName.textContent = (settings.padHotkey && settings.padHotkey.name) || (IS_MAC ? 'Right Option' : 'Right Alt');
     setChecked('pad-enabled', settings.pad && settings.pad.enabled);
+    setChecked('pad-nohistory', !(settings.pad && settings.pad.excludeFromClipboardHistory === false));
 
     var a = settings.autoStop || {};
     setChecked('autostop-enabled', a.enabled);
@@ -373,6 +374,7 @@
   function wireHotkey() {
     bindToggle('autostop-enabled', function (v) { persist({ autoStop: { enabled: v } }); });
     bindToggle('pad-enabled', function (v) { persist({ pad: { enabled: v } }); });
+    bindToggle('pad-nohistory', function (v) { persist({ pad: { excludeFromClipboardHistory: v } }); });
 
     wireCapture('padhotkey-capture', 'padhotkey-status', 'Press a key or combo for the drop pad…', function (res) {
       var hk = composeHotkey(res);
@@ -945,7 +947,7 @@
     var cur = {
       hotkey: { vk: 163, name: 'Right Ctrl' },
       padHotkey: { vk: 165, name: 'Right Alt' },
-      pad: { enabled: true },
+      pad: { enabled: true, excludeFromClipboardHistory: true },
       mic: { deviceId: 'default', warm: true, preRollMs: 800 },
       model: 'small.en', language: 'en',
       format: { fillerRemoval: true, voiceCommands: true, trailingSpace: true, autoCapitalize: true, artifactStrip: true },

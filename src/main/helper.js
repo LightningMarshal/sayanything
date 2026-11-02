@@ -408,9 +408,18 @@ class Helper extends EventEmitter {
     return this._request(this._typeQ, payload, TYPE_TIMEOUT_MS);
   }
 
-  /** Set the clipboard WITHOUT pasting (drop pad auto-copy). @param {string} text */
-  copy(text) {
-    const payload = { cmd: 'clipboard', text: (text == null ? '' : String(text)) };
+  /**
+   * Set the clipboard WITHOUT pasting (drop pad auto-copy).
+   * @param {string} text
+   * @param {{noHistory?: boolean}} [opts] noHistory: ask clipboard history,
+   *   cloud clipboard and clipboard managers not to record this entry.
+   */
+  copy(text, opts) {
+    const payload = {
+      cmd: 'clipboard',
+      text: (text == null ? '' : String(text)),
+      noHistory: !!(opts && opts.noHistory),
+    };
     return this._request(this._copyQ, payload, TYPE_TIMEOUT_MS);
   }
 
