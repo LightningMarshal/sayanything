@@ -82,6 +82,26 @@ jobs:
       - name: Electron smoke test (settings, helper, whisper binaries)
         run: npm run smoke
 
+  package-windows:
+    name: Package Windows app + fuses + packaged smoke
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm ci
+      - name: Compile native helper (Windows csc.exe)
+        shell: cmd
+        run: native\build.cmd
+      - name: Setup (whisper.cpp zip and the default model, both SHA-256 pinned)
+        run: node scripts/setup.js
+      - name: Package unpacked app (electron-builder --dir, fuses applied in afterPack)
+        run: npm run dist:dir
+      - name: Verify fuses, RunAsNode, and the packaged app's smoke test
+        run: node scripts/check-packaged-app.js "dist/win-unpacked/Say Anything.exe"
+
   macos:
     name: macOS helper build + tests
     runs-on: macos-14

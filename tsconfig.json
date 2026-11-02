@@ -16,5 +16,5 @@
     "resolveJsonModule": true
   },
   "exclude": ["src/renderer/overlay/worklet.js"],
-  "include": ["src/main/**/*.js", "src/renderer/**/*.js", "src/renderer/globals.d.ts", "src/preload/**/*.js", "test/*-test.js", "scripts/*.js"]
+  "include": ["src/main/**/*.js", "src/renderer/**/*.js", "src/renderer/globals.d.ts", "src/preload/**/*.js", "test/*-test.js", "scripts/*.js", "scripts/modules.d.ts"]
 }
