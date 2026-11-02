@@ -17,8 +17,8 @@ jobs:
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
       - name: Install dev dependencies
@@ -41,8 +41,8 @@ jobs:
     name: Windows helper build + self-test
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
       - name: Install dependencies
@@ -61,8 +61,8 @@ jobs:
     env:
       ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
       - name: Install dev dependencies
@@ -71,3 +71,7 @@ jobs:
         run: npm test
       - name: Compile native helper (swiftc, universal)
         run: native/build-mac.sh
+      - name: Helper self-test (no TCC grants on CI; checks protocol, perms, clipboard)
+        env:
+          CI: '1'
+        run: node test/helper-selftest.js
