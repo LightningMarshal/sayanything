@@ -1,11 +1,11 @@
 'use strict';
 
 /* =============================================================================
- * SaySomething — overlay pill driver
+ * SayAnything — overlay pill driver
  * -----------------------------------------------------------------------------
  * Plain browser script (loaded via <script>, no modules). Responsibilities:
  *   - subscribe to overlay:state (main -> renderer) and switch the pill state
- *   - render a liquid 24-bar waveform driven by the saysomething:level CustomEvent
+ *   - render a liquid 24-bar waveform driven by the sayanything:level CustomEvent
  *     (detail.rms) dispatched ~30/s by audio.js, interpolated to 60fps
  *   - run the mm:ss elapsed timer from detail.t0 while listening
  *   - show a short message for transcribing / success / cancelled /
@@ -35,7 +35,7 @@
   var cur = [];           // current displayed scale (0..1), smoothed
   var level = 0;          // smoothed overall loudness (0..1)
   var targetLevel = 0;    // latest mapped rms (0..1)
-  var lastLevelAt = 0;    // timestamp of last saysomething:level event
+  var lastLevelAt = 0;    // timestamp of last sayanything:level event
   var phase = 0;          // traveling-wave phase
 
   var rafId = 0;
@@ -271,7 +271,7 @@
   // -------------------------------------------------------------------------
   // Auto-stop (VAD) feedback: as silence accumulates while latched, dim the pill
   // toward the cutoff so the auto-stop never feels random. Driven by the
-  // saysomething:vad CustomEvent from audio.js (detail.progress 0..1). Opacity-only.
+  // sayanything:vad CustomEvent from audio.js (detail.progress 0..1). Opacity-only.
   // -------------------------------------------------------------------------
   function clearVad() {
     if (!pill) return;
@@ -295,7 +295,7 @@
   buildBars();
 
   // level feed from audio.js (window CustomEvent, never crosses IPC)
-  window.addEventListener('saysomething:level', function (e) {
+  window.addEventListener('sayanything:level', function (e) {
     var d = e && e.detail;
     if (!d) return;
     targetLevel = mapRms(d.rms);
@@ -303,20 +303,20 @@
   });
 
   // auto-stop countdown feed from audio.js (window CustomEvent, never IPC)
-  window.addEventListener('saysomething:vad', function (e) {
+  window.addEventListener('sayanything:vad', function (e) {
     var d = e && e.detail;
     if (!d) return;
     applyVad(d.active, d.progress);
   });
 
   // state feed from main
-  if (window.saysomething && typeof window.saysomething.on === 'function') {
-    window.saysomething.on('overlay:state', function (payload) {
+  if (window.sayanything && typeof window.sayanything.on === 'function') {
+    window.sayanything.on('overlay:state', function (payload) {
       payload = payload || {};
       applyState(payload.state, payload.detail);
     });
     // live partial transcript feed from main (display-only)
-    window.saysomething.on('overlay:partial', function (payload) {
+    window.sayanything.on('overlay:partial', function (payload) {
       payload = payload || {};
       showPartial(payload.text);
     });
@@ -324,14 +324,14 @@
 
   // Debug/standalone hook (harmless in production): lets a harness drive states
   // and levels without the IPC bridge.
-  window.__saysomethingOverlay = {
+  window.__sayanythingOverlay = {
     applyState: applyState,
     partial: showPartial,
     level: function (rms) {
-      window.dispatchEvent(new CustomEvent('saysomething:level', { detail: { rms: rms } }));
+      window.dispatchEvent(new CustomEvent('sayanything:level', { detail: { rms: rms } }));
     },
     vad: function (active, progress) {
-      window.dispatchEvent(new CustomEvent('saysomething:vad', { detail: { active: active, progress: progress } }));
+      window.dispatchEvent(new CustomEvent('sayanything:vad', { detail: { active: active, progress: progress } }));
     }
   };
 })();

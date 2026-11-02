@@ -20,7 +20,7 @@ const FAKE_MODELS = [
   { name: 'large-v3-turbo', sizeMB: 1620, note: 'Most accurate, largest', recommended: false, downloaded: false, active: false },
 ];
 
-// The settings preload bridges window.saysomething.invoke to ipcMain.handle; stub the
+// The settings preload bridges window.sayanything.invoke to ipcMain.handle; stub the
 // channels the page calls on load so it renders without a real backend.
 ipcMain.handle('settings:get', function () {
   return { model: 'small.en', mic: {}, format: {}, overlay: {}, history: {}, inject: {}, autoStop: {}, streaming: {}, rewrite: {}, hotkey: {}, dictionary: [] };

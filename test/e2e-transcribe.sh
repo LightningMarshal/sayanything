@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# SaySomething e2e transcription proof (macOS) — bash port of e2e-transcribe.ps1
+# SayAnything e2e transcription proof (macOS) — bash port of e2e-transcribe.ps1
 #
 # Synthesizes a known sentence to a 16 kHz mono 16-bit WAV using macOS' `say` +
 # `afconvert`, POSTs it to the local whisper-server /inference endpoint, and
@@ -55,10 +55,10 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BIN_SERVER="$REPO_ROOT/bin/whisper/whisper-server"
 # Mirrors src/main/config.js resolveUserData() on darwin: Electron's
 # app.getPath('appData') is ~/Library/Application Support, joined with APP_NAME.
-MODELS_DIR="$HOME/Library/Application Support/SaySomething/models"
+MODELS_DIR="$HOME/Library/Application Support/SayAnything/models"
 
 echo ''
-echo '== SaySomething e2e transcription test (macOS) =='
+echo '== SayAnything e2e transcription test (macOS) =='
 
 # --- Is a TCP port accepting connections? (server readiness / reachability) ---
 test_port() {
@@ -110,7 +110,7 @@ else
   echo 'Server ready.'
 fi
 
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/saysomething-e2e.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/sayanything-e2e.XXXXXX")"
 EXIT_CODE=0
 
 cleanup() {

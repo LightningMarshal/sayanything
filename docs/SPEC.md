@@ -1,10 +1,10 @@
-# Say Something — product & technical spec
+# Say Anything — product & technical spec
 
-**Say Something** is a local-first voice dictation app for Windows and macOS: hold a key anywhere, speak, release — your words appear in whatever app has focus. A free, private remake of Wispr Flow. Everything runs on-device; no accounts, no API keys, no cloud, no telemetry. Ever.
+**Say Anything** is a local-first voice dictation app for Windows and macOS: hold a key anywhere, speak, release — your words appear in whatever app has focus. A free, private remake of Wispr Flow. Everything runs on-device; no accounts, no API keys, no cloud, no telemetry. Ever.
 
 ## Product experience
 
-- **Hold Right Ctrl** (default, rebindable) anywhere in Windows → a small glowing pill appears bottom-center, a soft chime plays, and Say Something is listening. Release → pill switches to "thinking", then your transcribed, cleaned-up text is inserted into the focused app at the cursor. Total feel: release-to-text under ~2s for a typical sentence.
+- **Hold Right Ctrl** (default, rebindable) anywhere in Windows → a small glowing pill appears bottom-center, a soft chime plays, and Say Anything is listening. Release → pill switches to "thinking", then your transcribed, cleaned-up text is inserted into the focused app at the cursor. Total feel: release-to-text under ~2s for a typical sentence.
 - **Tap** (< 250 ms) the same hotkey → hands-free latched recording; tap again to finish. **Esc** while recording cancels (nothing inserted).
 - **Drop pad** (hold **Right Alt**, default `padHotkey`): speak → a small draggable pad appears with your text, **auto-copied** to the clipboard. Drag the pad onto a text field and release to drop the text there (renderer streams `pad:move` to follow the cursor, then `pad:place` on release; main hides the pad and the C# helper clicks the release point + pastes), or just **Ctrl+V**. For when you're not sure which field has focus. Toggle: `pad.enabled`. Never injects at the caret — it hands off to the pad instead.
 - **Never clips your first word**: with "warm mic" on (default), a rolling ~800 ms pre-roll buffer means speech that starts a beat before the keypress is still captured.
@@ -12,7 +12,7 @@
 - **Smart formatting**: whisper's punctuation, plus filler-word removal ("um", "uh"), spoken commands ("new line", "new paragraph"), auto-capitalization, whisper-artifact stripping ("[BLANK_AUDIO]" etc.). If nothing intelligible was heard, nothing is inserted and the pill shows a subtle "didn't catch that" state.
 - **Custom dictionary**: user-provided words/names (e.g. "Kubernetes", "PostgreSQL", jargon) are fed to whisper as an initial prompt so they transcribe correctly.
 - **History**: last 200 transcriptions with timestamps in the settings window; click to copy; toggleable; delete/clear. Local JSON only.
-- **Tray app**: Say Something lives in the system tray (pause/resume, settings, quit). Settings window: hotkey rebind (press-to-capture), mic picker, model manager (download/switch with progress), language, formatting toggles, dictionary editor, history, launch-at-login, overlay/chime options.
+- **Tray app**: Say Anything lives in the system tray (pause/resume, settings, quit). Settings window: hotkey rebind (press-to-capture), mic picker, model manager (download/switch with progress), language, formatting toggles, dictionary editor, history, launch-at-login, overlay/chime options.
 - **Overlay** is click-through, non-focusable, never steals focus. States: listening (animated waveform + timer), transcribing (wisp spinner), success flash (last few words inserted), cancelled, error, nothing-heard. Hidden when idle.
 
 ## Visual identity — "aurora wisp"
@@ -23,13 +23,13 @@ Dark, ethereal, premium. **Absolutely no orange, no terracotta.** Ink background
 
 Electron shell (main = CommonJS, renderers = vanilla HTML/CSS/JS, **no bundler, no framework**) + two local native pieces:
 
-1. **SaySomethingHelper.exe** — a tiny C# executable compiled at setup time by the .NET Framework compiler that ships with Windows (`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`). Runs as a persistent child process speaking JSON-lines over stdin/stdout. Responsibilities:
+1. **SayAnythingHelper.exe** — a tiny C# executable compiled at setup time by the .NET Framework compiler that ships with Windows (`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`). Runs as a persistent child process speaking JSON-lines over stdin/stdout. Responsibilities:
    - Low-level keyboard hook (`WH_KEYBOARD_LL`) that reports **only the watched VKs** (hotkey + Esc) — see privacy rules below.
    - Text injection: clipboard-swap paste (save clipboard → set text → SendInput Ctrl+V → restore after delay) and a fallback "type" mode (SendInput `KEYEVENTF_UNICODE`).
    - Foreground-window info (exe name, title) on request.
 2. **whisper-server.exe** — from the whisper.cpp v1.9.1 release (`whisper-bin-x64.zip`, cached at `third_party/whisper-bin-x64-v1.9.1.zip`, else downloaded from GitHub). Started at app boot on `127.0.0.1:8737` with the selected ggml model; kept warm; restarted with backoff on crash. Transcription = POST WAV to `/inference`.
 
-Audio capture happens in the (hidden-capable) overlay renderer: `getUserMedia` → AudioWorklet → downsample to 16 kHz mono PCM16 → chunks over IPC to main → WAV assembly → whisper client → formatter → helper paste → history. Models (ggml, from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-<name>.bin`) download to `%APPDATA%/SaySomething/models` with progress UI. Default model: **small.en** (466 MB); catalog: tiny.en, base.en, small.en, medium.en, large-v3-turbo, plus multilingual tiny/base/small/medium for non-English. Threads for whisper: `max(4, cpuCount - 2)`.
+Audio capture happens in the (hidden-capable) overlay renderer: `getUserMedia` → AudioWorklet → downsample to 16 kHz mono PCM16 → chunks over IPC to main → WAV assembly → whisper client → formatter → helper paste → history. Models (ggml, from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-<name>.bin`) download to `%APPDATA%/SayAnything/models` with progress UI. Default model: **small.en** (466 MB); catalog: tiny.en, base.en, small.en, medium.en, large-v3-turbo, plus multilingual tiny/base/small/medium for non-English. Threads for whisper: `max(4, cpuCount - 2)`.
 
 **Zero runtime npm dependencies.** `electron` is the only devDependency. Downloads use Node's built-in `fetch`; unzipping uses `C:\Windows\System32\tar.exe` (bsdtar — handles zip; do NOT use bare `tar`, Git Bash's GNU tar fails on zips).
 
@@ -50,11 +50,11 @@ Order: strip whisper artifacts (`[BLANK_AUDIO]`, `[Music]`, `(silence)`, `[inaud
 
 ### Setup & run
 
-- `npm install` then `node scripts/setup.js` — idempotent; steps: (1) unpack whisper binaries from `third_party/` cache or download; keep only the files whisper-server/whisper-cli need, into `bin/whisper/`; (2) compile SaySomethingHelper.exe into `bin/helper/`; (3) download the default model (or `--model <name>`) with a console progress bar; (4) run a self-check (server boots with model, helper answers ping) and print a status matrix.
+- `npm install` then `node scripts/setup.js` — idempotent; steps: (1) unpack whisper binaries from `third_party/` cache or download; keep only the files whisper-server/whisper-cli need, into `bin/whisper/`; (2) compile SayAnythingHelper.exe into `bin/helper/`; (3) download the default model (or `--model <name>`) with a console progress bar; (4) run a self-check (server boots with model, helper answers ping) and print a status matrix.
 - `npm start` → `electron .` — tray appears, whisper server warms, ready chime is NOT played (silent start), overlay hidden until first use.
 - `npx electron . --smoke` → headless self-test mode: **no windows shown**; checks settings load, helper compile/spawn/ping, binaries present, server boot + `/inference` reachability (skip gracefully with a warning if no model downloaded yet); prints one JSON line per check + a final summary JSON; exits 0 if all present checks pass, 1 otherwise. Must run before `app.whenReady` window creation is triggered.
 - `test/e2e-transcribe.ps1` — full-loop proof without a microphone: PowerShell `System.Speech` TTS synthesizes a known sentence to a 16 kHz WAV, POSTs it to the running (or self-started) whisper server, asserts key words appear in the response.
-- `scripts/make-shortcut.ps1` — creates Start Menu + Desktop shortcuts targeting `node_modules\electron\dist\electron.exe` with the repo path as argument and `assets/SaySomething.ico` as icon. Launch-at-login uses `app.setLoginItemSettings` with the same target (best-effort).
+- `scripts/make-shortcut.ps1` — creates Start Menu + Desktop shortcuts targeting `node_modules\electron\dist\electron.exe` with the repo path as argument and `assets/SayAnything.ico` as icon. Launch-at-login uses `app.setLoginItemSettings` with the same target (best-effort).
 
 ### Privacy & security rules (hard requirements)
 
@@ -63,14 +63,14 @@ Order: strip whisper artifacts (`[BLANK_AUDIO]`, `[Music]`, `(silence)`, `[inaud
 - Clipboard restore after paste (default 300 ms); best-effort restore of text-format clipboard content; if the clipboard held a non-text format, skip the swap and warn once (still paste, then leave our text — document this).
 - Audio: pre-roll ring buffer lives only in renderer memory, is discarded unless a session starts, and audio is never written to disk (WAV exists only as an in-memory buffer for the POST). whisper-server binds 127.0.0.1 only.
 - No network calls at runtime except localhost whisper; the only internet access is `scripts/setup.js`/model downloads (GitHub + Hugging Face) and it must say so on the console.
-- **Runtime-network exception (v0.2 AI rewrite):** when — and only when — the user has enabled AI rewrite, Say Something may make localhost requests to a local Ollama daemon at `http://127.0.0.1:11434` (`GET /api/tags` to list installed models, `POST /api/chat` to rewrite the transcript). The host is a hard-coded constant (`127.0.0.1:11434`); there is no setting, env var, or code path that can point it at any other machine. Nothing is sent when rewrite is disabled. This is still fully on-device — no data leaves the machine.
+- **Runtime-network exception (v0.2 AI rewrite):** when — and only when — the user has enabled AI rewrite, Say Anything may make localhost requests to a local Ollama daemon at `http://127.0.0.1:11434` (`GET /api/tags` to list installed models, `POST /api/chat` to rewrite the transcript). The host is a hard-coded constant (`127.0.0.1:11434`); there is no setting, env var, or code path that can point it at any other machine. Nothing is sent when rewrite is disabled. This is still fully on-device — no data leaves the machine.
 - Helper compile source is checked into the repo (auditable); the exe is never downloaded.
 
 ### Error handling & resilience
 
-Helper or whisper-server crash → auto-restart with exponential backoff (max 3 rapid retries, then tray/notification + overlay error). Mic permission denied → overlay error and settings hint linking `ms-settings:privacy-microphone`. Port 8737 busy → probe upward (8738…8747) and pass along. Single-instance lock (`app.requestSingleInstanceLock`). All logs to `%APPDATA%/SaySomething/logs/SaySomething.log` (size-capped ~1 MB, rotated once) with a `log.js` module — no `console.log` spray in main.
+Helper or whisper-server crash → auto-restart with exponential backoff (max 3 rapid retries, then tray/notification + overlay error). Mic permission denied → overlay error and settings hint linking `ms-settings:privacy-microphone`. Port 8737 busy → probe upward (8738…8747) and pass along. Single-instance lock (`app.requestSingleInstanceLock`). All logs to `%APPDATA%/SayAnything/logs/SayAnything.log` (size-capped ~1 MB, rotated once) with a `log.js` module — no `console.log` spray in main.
 
-### C# constraints (SaySomethingHelper.cs)
+### C# constraints (SayAnythingHelper.cs)
 
 `csc.exe` v4.0.30319 compiles **C# 5 only**: no string interpolation (`$"..."`), no null-conditional `?.`, no `nameof`, no expression-bodied members, no `out var`, no pattern matching, no tuples. `async/await` IS available. Target: `/target:winexe` (no console window), x64/AnyCPU, reference System.Windows.Forms (clipboard needs an STA thread — clipboard ops must run on an STA thread; the hook needs a message loop). Keep it in ONE file. JSON: hand-roll minimal JSON emit/parse for the fixed protocol (no external libs); protocol strings must be UTF-8 with `Console.OutputEncoding`/`InputEncoding` set accordingly.
 

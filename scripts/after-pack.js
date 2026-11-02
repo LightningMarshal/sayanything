@@ -20,11 +20,11 @@ module.exports = async function afterPack(context) {
   const path = require('path');
 
   const productFilename =
-    (context.packager && context.packager.appInfo && context.packager.appInfo.productFilename) || 'Say Something';
+    (context.packager && context.packager.appInfo && context.packager.appInfo.productFilename) || 'Say Anything';
   const resourcesDir = path.join(context.appOutDir, productFilename + '.app', 'Contents', 'Resources');
 
   const binaries = [
-    path.join(resourcesDir, 'bin', 'helper', 'SaySomethingHelper'),
+    path.join(resourcesDir, 'bin', 'helper', 'SayAnythingHelper'),
     path.join(resourcesDir, 'bin', 'whisper', 'whisper-server'),
   ];
 

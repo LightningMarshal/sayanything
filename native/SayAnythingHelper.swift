@@ -1,6 +1,6 @@
-// SaySomethingHelper — native helper for SaySomething (local-first voice dictation).
+// SayAnythingHelper — native helper for SayAnything (local-first voice dictation).
 //
-// macOS port of native/SaySomethingHelper.cs. A persistent child process spoken
+// macOS port of native/SayAnythingHelper.cs. A persistent child process spoken
 // to by the Electron main process over stdin/stdout using the SAME JSON-lines
 // protocol as the Windows helper (see docs/CONTRACTS.md), plus the mac-only
 // `perms` protocol (docs/MAC-PORT-ADDENDUM.md).
@@ -357,8 +357,8 @@ final class Helper {
     var runLoopSource: CFRunLoopSource?
     weak var tapRunLoop: CFRunLoop?
 
-    let injectQueue = DispatchQueue(label: "com.saysomething.helper.inject")
-    let timerQueue = DispatchQueue(label: "com.saysomething.helper.timers")
+    let injectQueue = DispatchQueue(label: "com.sayanything.helper.inject")
+    let timerQueue = DispatchQueue(label: "com.sayanything.helper.timers")
 
     // Event source for our synthesized events (independent private state).
     let evtSource = CGEventSource(stateID: .privateState)
@@ -374,7 +374,7 @@ final class Helper {
 
     func startTapThread() {
         let t = Thread { [weak self] in self?.tapThreadMain() }
-        t.name = "com.saysomething.helper.tap"
+        t.name = "com.sayanything.helper.tap"
         t.stackSize = 512 * 1024
         t.start()
     }
@@ -820,7 +820,7 @@ final class Helper {
         // A click alone loses the focus race on macOS: the pad had focus, so the
         // moment it hides, AppKit re-activates another of OUR windows (Settings),
         // often AFTER the click activated the target — and the paste lands back
-        // in Say Something. So don't race: find the app that owns the topmost
+        // in Say Anything. So don't race: find the app that owns the topmost
         // window under the drop point and activate IT by pid, wait until it is
         // genuinely frontmost, then click to place the caret, then paste.
         var targetPid: pid_t = 0

@@ -10,7 +10,7 @@
  * every persisted mutation.
  *
  * Works both inside Electron and in plain node (require-able for tests): the path
- * comes from config.js, which itself falls back to %APPDATA%/SaySomething when Electron
+ * comes from config.js, which itself falls back to %APPDATA%/SayAnything when Electron
  * is unavailable. Loading tolerates a missing directory/file (→ DEFAULTS) and
  * never throws.
  *
@@ -81,7 +81,7 @@ const DEFAULTS = {
   // Applies ONLY to tap/latch mode; hold-to-talk is never auto-stopped.
   autoStop: { enabled: true, silenceMs: 2000 },
   overlay: { chime: true, offsetY: 48 },
-  history: { enabled: true, max: 200 },
+  history: { enabled: false, max: 200 }, // off by default: transcripts stay unsaved until the user opts in
   launchAtLogin: false,
   paused: false,
   welcomed: false,         // set true after the first-run welcome has been shown

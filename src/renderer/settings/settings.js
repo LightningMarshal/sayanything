@@ -1,10 +1,10 @@
 'use strict';
 
 /*
- * SaySomething settings renderer.
+ * SayAnything settings renderer.
  *
  * Plain browser JS (no modules/framework). Talks to main exclusively through the
- * preload bridge window.saysomething = { send, on, invoke } using the channels declared
+ * preload bridge window.sayanything = { send, on, invoke } using the channels declared
  * in src/main/ipc.js. When the bridge is absent (e.g. opened outside Electron for
  * a design preview) a local fallback keeps the page interactive with demo data.
  */
@@ -14,7 +14,7 @@
   // bridge (+ fallback for preview outside Electron)
   // -------------------------------------------------------------------------
 
-  var api = window.saysomething || makeFallbackApi();
+  var api = window.sayanything || makeFallbackApi();
 
   var settings = null;          // latest settings snapshot
   var downloading = Object.create(null); // model name -> true while a download runs

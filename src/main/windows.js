@@ -114,7 +114,7 @@ function createOverlay() {
     thickFrame: false,
     alwaysOnTop: true,
     acceptFirstMouse: false,
-    title: 'Say Something overlay',
+    title: 'Say Anything overlay',
     webPreferences: {
       preload: path.join(PRELOAD_DIR, 'overlay.js'),
       contextIsolation: true,
@@ -167,7 +167,7 @@ function windowIcon() {
     // .ico is a Windows format; on macOS use the PNG. (BrowserWindow `icon` is
     // ignored on macOS anyway — the Dock/app icon comes from the bundle — so this
     // is harmless there, but we still hand it a valid image.)
-    const file = process.platform === 'darwin' ? 'SaySomething.png' : 'SaySomething.ico';
+    const file = process.platform === 'darwin' ? 'SayAnything.png' : 'SayAnything.ico';
     const img = nativeImage.createFromPath(path.join(ASSETS_DIR, file));
     if (img && !img.isEmpty()) return img;
   } catch (e) { /* ignore */ }
@@ -193,7 +193,7 @@ function createSettings() {
     minHeight: 420,
     show: false,
     backgroundColor: '#0B0E14',
-    title: 'Say Something',
+    title: 'Say Anything',
     autoHideMenuBar: true,
     icon: windowIcon(),
     webPreferences: {
@@ -245,7 +245,7 @@ function createPad() {
     skipTaskbar: true,
     hasShadow: false,
     alwaysOnTop: true,
-    title: 'Say Something drop pad',
+    title: 'Say Anything drop pad',
     webPreferences: {
       preload: path.join(PRELOAD_DIR, 'pad.js'),
       contextIsolation: true,
@@ -318,7 +318,7 @@ function showWelcome() {
     maximizable: false,
     fullscreenable: false,
     backgroundColor: '#0B0E14',
-    title: 'Welcome to Say Something',
+    title: 'Welcome to Say Anything',
     icon: windowIcon(),
     webPreferences: {
       contextIsolation: true,

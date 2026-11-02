@@ -54,7 +54,7 @@ async function main() {
   if (!fs.existsSync(config.BIN_HELPER)) {
     console.error('stage-bundle: helper not built at ' + config.BIN_HELPER);
     if (IS_MAC) {
-      console.error('             run:  ' + config.HELPER_BUILD + '   (compiles native/SaySomethingHelper.swift)');
+      console.error('             run:  ' + config.HELPER_BUILD + '   (compiles native/SayAnythingHelper.swift)');
     } else {
       console.error('             run:  node scripts/setup.js   (compiles the C# helper)');
     }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # build-whisper-mac.sh — build whisper.cpp's whisper-server for macOS and stage
-# the resulting binary at bin/whisper/whisper-server for the "Say Something" port.
+# the resulting binary at bin/whisper/whisper-server for the "Say Anything" port.
 #
 # This is the ONLY producer of bin/whisper/whisper-server on macOS (see
 # docs/MAC-PORT-ADDENDUM.md). binaries.js on darwin does
@@ -35,7 +35,7 @@
 #   WHISPER_CPP_REPO_URL   git remote to clone (default: upstream ggml-org repo)
 #   WHISPER_CPP_TAG        tag to build (default: v1.9.1)
 #   WHISPER_CPP_SRC_DIR    where to clone/reuse the whisper.cpp source tree
-#                           (default: ~/Library/Caches/SaySomething/whisper-build/whisper.cpp)
+#                           (default: ~/Library/Caches/SayAnything/whisper-build/whisper.cpp)
 #   JOBS                   parallel build jobs (default: hw.ncpu)
 
 set -euo pipefail
@@ -44,7 +44,7 @@ REPO_URL="${WHISPER_CPP_REPO_URL:-https://github.com/ggml-org/whisper.cpp}"
 TAG="${WHISPER_CPP_TAG:-v1.9.1}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SRC_DIR="${WHISPER_CPP_SRC_DIR:-$HOME/Library/Caches/SaySomething/whisper-build/whisper.cpp}"
+SRC_DIR="${WHISPER_CPP_SRC_DIR:-$HOME/Library/Caches/SayAnything/whisper-build/whisper.cpp}"
 STAGE_DIR="$WORKSPACE_ROOT/bin/whisper"
 STAGE_BIN="$STAGE_DIR/whisper-server"
 JOBS="${JOBS:-$(sysctl -n hw.ncpu 2>/dev/null || echo 4)}"

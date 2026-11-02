@@ -150,9 +150,9 @@ class WhisperServer extends EventEmitter {
     this._child = child;
 
     // Do NOT persist third-party engine output to the disk log by default — it is
-    // an ungated channel we don't control. Opt in with SAYSOMETHING_LOG_ENGINE=1 for
+    // an ungated channel we don't control. Opt in with SAYANYTHING_LOG_ENGINE=1 for
     // debugging. Server lifecycle (start/exit/crash) is logged separately below.
-    const logEngine = process.env.SAYSOMETHING_LOG_ENGINE === '1';
+    const logEngine = process.env.SAYANYTHING_LOG_ENGINE === '1';
     const onOut = function (d) {
       if (!logEngine) return;
       const line = String(d).trim();

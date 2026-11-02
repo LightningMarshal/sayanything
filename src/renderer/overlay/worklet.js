@@ -1,7 +1,7 @@
 'use strict';
 
 /*
- * SaySomething audio worklet.
+ * SayAnything audio worklet.
  *
  * Runs in the AudioWorkletGlobalScope (the audio rendering thread). It receives
  * the microphone signal at the hardware sample rate (the global `sampleRate`,
@@ -22,7 +22,7 @@ var TARGET_RATE = 16000;
 var CHUNK_SAMPLES = 1600; // 100 ms at 16 kHz
 var LEVEL_SAMPLES = 533;  // ~30 Hz at 16 kHz (16000 / 533 ≈ 30.0)
 
-class SaySomethingDownsampler extends AudioWorkletProcessor {
+class SayAnythingDownsampler extends AudioWorkletProcessor {
   constructor() {
     super();
     // Input samples consumed per emitted 16 kHz output sample.
@@ -103,4 +103,4 @@ class SaySomethingDownsampler extends AudioWorkletProcessor {
   }
 }
 
-registerProcessor('saysomething-downsampler', SaySomethingDownsampler);
+registerProcessor('sayanything-downsampler', SayAnythingDownsampler);

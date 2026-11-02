@@ -2,10 +2,10 @@
 
 /**
  * File logger for the main process. Writes timestamped lines to
- * %APPDATA%/SaySomething/logs/SaySomething.log, size-capped at ~1 MB and rotated once
- * (SaySomething.log → SaySomething.log.1). Never throws — logging must not crash the app.
+ * %APPDATA%/SayAnything/logs/SayAnything.log, size-capped at ~1 MB and rotated once
+ * (SayAnything.log → SayAnything.log.1). Never throws — logging must not crash the app.
  * There is deliberately no console.log spray in the main process; set the
- * env var SAYSOMETHING_LOG_CONSOLE=1 to mirror lines to stdout/stderr while developing.
+ * env var SAYANYTHING_LOG_CONSOLE=1 to mirror lines to stdout/stderr while developing.
  *
  * API: log.debug(...) log.info(...) log.warn(...) log.error(...), plus log.path.
  */
@@ -14,10 +14,10 @@ const fs = require('fs');
 const path = require('path');
 const { LOGS_DIR } = require('./config');
 
-const LOG_FILE = path.join(LOGS_DIR, 'SaySomething.log');
-const ROTATE_FILE = path.join(LOGS_DIR, 'SaySomething.log.1');
+const LOG_FILE = path.join(LOGS_DIR, 'SayAnything.log');
+const ROTATE_FILE = path.join(LOGS_DIR, 'SayAnything.log.1');
 const MAX_BYTES = 1024 * 1024; // ~1 MB
-const MIRROR = process.env.SAYSOMETHING_LOG_CONSOLE === '1';
+const MIRROR = process.env.SAYANYTHING_LOG_CONSOLE === '1';
 
 let dirEnsured = false;
 

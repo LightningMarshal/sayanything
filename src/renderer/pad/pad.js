@@ -1,7 +1,7 @@
 'use strict';
 
 /* =============================================================================
- * SaySomething — drop pad driver (plain browser script; no modules).
+ * SayAnything — drop pad driver (plain browser script; no modules).
  * Shows the transcribed text (auto-copied), and lets the user place it:
  *   - drag the pad -> pad:move (follow the cursor), then pad:place (drop at the
  *     release point; main hides the pad and pastes at that screen point)
@@ -17,7 +17,7 @@
   var copyBtn = document.getElementById('copy');
   var dismissBtn = document.getElementById('dismiss');
 
-  var api = window.saysomething;
+  var api = window.sayanything;
 
   function send(ch, payload) {
     try { if (api && api.send) api.send(ch, payload); } catch (e) { /* ignore */ }
@@ -102,5 +102,5 @@
   }
 
   // Standalone/debug hook (harmless in production).
-  window.__saysomethingPad = { show: show };
+  window.__sayanythingPad = { show: show };
 })();

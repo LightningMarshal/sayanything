@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to report a bug. Fill in what you can — even a
-        rough description helps. Logs live at `%APPDATA%\SaySomething\logs\SaySomething.log`
+        rough description helps. Logs live at `%APPDATA%\SayAnything\logs\SayAnything.log`
         and never contain your keystrokes, audio, or transcripts.
   - type: textarea
     id: what
@@ -26,7 +26,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Say Something version
+      label: Say Anything version
       placeholder: e.g. 0.1.0
   - type: input
     id: os

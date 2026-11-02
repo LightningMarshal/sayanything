@@ -66,7 +66,7 @@ function runUnderElectron(el) {
     '</style></head><body><div class="wrap">' +
     wave +
     '<p class="kicker">You’re sitting there quiet all day.</p>' +
-    '<h1>Say Something</h1>' +
+    '<h1>Say Anything</h1>' +
     '<p class="desc"><span class="free">Free, local</span> voice dictation for Windows and Mac. No cloud, no account.</p>' +
     '</div></body></html>';
 

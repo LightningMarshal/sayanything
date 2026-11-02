@@ -9,8 +9,8 @@
  * Electron binary (require('electron') returns that binary's path in node).
  *
  * Outputs:
- *   assets/SaySomething.png  (256x256 RGBA)   — also used by the tray as its icon source
- *   assets/SaySomething.ico  (single 256 image, PNG-compressed entry)
+ *   assets/SayAnything.png  (256x256 RGBA)   — also used by the tray as its icon source
+ *   assets/SayAnything.ico  (single 256 image, PNG-compressed entry)
  *
  * Zero runtime deps; no network. Exits when done.
  */
@@ -20,8 +20,8 @@ const path = require('path');
 
 const ASSETS_DIR = path.join(__dirname, '..', 'assets');
 const SVG_PATH = path.join(ASSETS_DIR, 'wisp.svg');
-const PNG_OUT = path.join(ASSETS_DIR, 'SaySomething.png');
-const ICO_OUT = path.join(ASSETS_DIR, 'SaySomething.ico');
+const PNG_OUT = path.join(ASSETS_DIR, 'SayAnything.png');
+const ICO_OUT = path.join(ASSETS_DIR, 'SayAnything.ico');
 const SIZE = 256;
 
 let electron;

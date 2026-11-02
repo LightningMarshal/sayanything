@@ -1,8 +1,8 @@
 'use strict';
 
 /*
- * SaySomething audio capture. Runs in the overlay renderer
- * (a page script; window.saysomething is provided by src/preload/overlay.js).
+ * SayAnything audio capture. Runs in the overlay renderer
+ * (a page script; window.sayanything is provided by src/preload/overlay.js).
  *
  * Responsibilities:
  *  - getUserMedia with the selected deviceId, falling back to the default device.
@@ -12,7 +12,7 @@
  *    of the most recent idle audio; flushed FIRST when a session starts so the
  *    first word is never clipped.
  *  - Forward chunks to main over IPC as `audio:chunk` {sessionId, buf}.
- *  - Dispatch a `saysomething:level` window CustomEvent {detail:{rms}} while capturing.
+ *  - Dispatch a `sayanything:level` window CustomEvent {detail:{rms}} while capturing.
  *  - Start / stop / cancel chimes via WebAudio oscillators (two-tone), gated on
  *    the per-session `chime` flag.
  *  - Mic failures surface as `audio:error` {message} with a human message.
@@ -23,7 +23,7 @@
 
 (function () {
   var TARGET_RATE = 16000;
-  var bridge = (typeof window !== 'undefined') ? window.saysomething : null;
+  var bridge = (typeof window !== 'undefined') ? window.sayanything : null;
 
   // --- WebAudio / capture graph ---
   var audioCtx = null;      // shared AudioContext (capture + chimes)
@@ -31,7 +31,7 @@
   var moduleAdded = false;  // worklet module added to this context?
   var mediaStream = null;   // active MediaStream (or null)
   var sourceNode = null;    // MediaStreamAudioSourceNode
-  var workletNode = null;   // AudioWorkletNode ('saysomething-downsampler')
+  var workletNode = null;   // AudioWorkletNode ('sayanything-downsampler')
   var streamDeviceId = null;// deviceId the current stream was opened with
   var opening = null;       // in-flight open promise (concurrency guard)
 
@@ -41,7 +41,7 @@
   var keepWarm = false;       // keep the stream open after stop?
 
   // --- latched auto-stop VAD (armed by main via audio:vad after a tap latches) ---
-  var vad = null;             // SaySomethingVad instance, or null when disarmed
+  var vad = null;             // SayAnythingVad instance, or null when disarmed
   var vadSessionId = null;    // session the VAD is armed for
   var vadLastAt = 0;          // timestamp of the last level fed to the VAD
 
@@ -59,7 +59,7 @@
   }
 
   function warn(msg) {
-    try { if (typeof console !== 'undefined' && console.warn) console.warn('[SaySomething audio] ' + msg); } catch (e) { /* ignore */ }
+    try { if (typeof console !== 'undefined' && console.warn) console.warn('[SayAnything audio] ' + msg); } catch (e) { /* ignore */ }
   }
 
   function humanMicError(err) {
@@ -149,7 +149,7 @@
         mediaStream = stream;
         streamDeviceId = deviceId;
         sourceNode = audioCtx.createMediaStreamSource(stream);
-        workletNode = new AudioWorkletNode(audioCtx, 'saysomething-downsampler');
+        workletNode = new AudioWorkletNode(audioCtx, 'sayanything-downsampler');
         workletNode.port.onmessage = onWorkletMessage;
         sourceNode.connect(workletNode);
         workletNode.connect(sinkNode); // pulled by the graph; silent
@@ -227,7 +227,7 @@
   }
 
   function dispatchLevel(rms) {
-    try { window.dispatchEvent(new CustomEvent('saysomething:level', { detail: { rms: rms } })); } catch (e) { /* ignore */ }
+    try { window.dispatchEvent(new CustomEvent('sayanything:level', { detail: { rms: rms } })); } catch (e) { /* ignore */ }
   }
 
   // ---------------------------------------------------------- auto-stop VAD
@@ -239,7 +239,7 @@
   // overlay.js listens for this to dim the pill toward the auto-stop cutoff.
   function dispatchVad(active, progress) {
     try {
-      window.dispatchEvent(new CustomEvent('saysomething:vad', { detail: { active: !!active, progress: progress || 0 } }));
+      window.dispatchEvent(new CustomEvent('sayanything:vad', { detail: { active: !!active, progress: progress || 0 } }));
     } catch (e) { /* ignore */ }
   }
 
@@ -256,7 +256,7 @@
     var sid = p && p.sessionId;
     if (sid == null) return;
     if (!p.enabled) { if (vadSessionId === sid) clearVad(); return; }
-    var VadLib = (typeof window !== 'undefined') ? window.SaySomethingVad : null;
+    var VadLib = (typeof window !== 'undefined') ? window.SayAnythingVad : null;
     if (!VadLib || typeof VadLib.createVad !== 'function') { warn('VAD library unavailable'); return; }
     var ms = (typeof p.silenceMs === 'number' && p.silenceMs > 0) ? p.silenceMs : 2000;
     try {
@@ -384,7 +384,7 @@
 
   function init() {
     if (!bridge || typeof bridge.on !== 'function') {
-      warn('window.saysomething bridge unavailable; audio disabled');
+      warn('window.sayanything bridge unavailable; audio disabled');
       return;
     }
     bridge.on('audio:start', onStart);

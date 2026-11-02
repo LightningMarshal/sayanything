@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * SaySomething — screenshot capture (docs tooling, dependency-free).
+ * SayAnything — screenshot capture (docs tooling, dependency-free).
  *
  * A standalone, minimal Electron entry point that renders the two renderer pages
  * to PNGs for the README, WITHOUT booting the real app (no native helper, no
@@ -13,7 +13,7 @@
  *
  * It loads the pages via file:// with NO preload, so each renderer falls back to
  * its built-in demo data / debug hooks (settings.js `makeFallbackApi`,
- * overlay.js `window.__saysomethingOverlay`) — meaning zero setup artifacts are needed.
+ * overlay.js `window.__sayanythingOverlay`) — meaning zero setup artifacts are needed.
  *
  * Outputs:
  *   assets/screenshots/overlay-listening.png   — the floating pill, listening
@@ -40,7 +40,7 @@ function wait(ms) {
 // GUI Electron on Windows does not attach stdout to a redirected file, so mirror
 // progress to a temp log as well (kept OUT of the committed assets dir) so runs
 // stay debuggable without cluttering the screenshots folder.
-const LOG_FILE = path.join(os.tmpdir(), 'saysomething-capture-screens.log');
+const LOG_FILE = path.join(os.tmpdir(), 'sayanything-capture-screens.log');
 function logStep(line) {
   try { process.stdout.write(line + '\n'); } catch (e) { /* ignore */ }
   try { fs.appendFileSync(LOG_FILE, line + '\n'); } catch (e) { /* ignore */ }
@@ -70,7 +70,7 @@ async function captureOverlay(win) {
     (function () {
       document.documentElement.style.background =
         'radial-gradient(120% 140% at 50% 38%, #131a29 0%, #0b0e14 62%)';
-      var o = window.__saysomethingOverlay;
+      var o = window.__sayanythingOverlay;
       if (o && o.applyState) {
         o.applyState('listening', { t0: Date.now() - 7000 });
         // ~30/s level feed with a lively, speech-like envelope
@@ -100,7 +100,7 @@ async function captureSettings(win) {
   win.showInactive();
   await wait(150);
 
-  // settings.js has no window.saysomething bridge here, so it uses makeFallbackApi():
+  // settings.js has no window.sayanything bridge here, so it uses makeFallbackApi():
   // demo models/history/dictionary and a fully interactive General tab. Give it a
   // beat to run its async settings:get / models:list before capturing.
   await wait(700);

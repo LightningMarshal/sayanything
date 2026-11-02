@@ -1,4 +1,4 @@
-# SaySomething live-partial proof (no microphone).
+# SayAnything live-partial proof (no microphone).
 #
 # Proves the streaming approach — windowed re-transcription of a GROWING audio
 # buffer against the one-shot /inference endpoint — produces sane, building
@@ -14,7 +14,7 @@ param([int]$Port = 8737)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $binServer = Join-Path $repo 'bin\whisper\whisper-server.exe'
-$model = Join-Path $env:APPDATA 'SaySomething\models\ggml-small.en.bin'
+$model = Join-Path $env:APPDATA 'SayAnything\models\ggml-small.en.bin'
 $sentence = 'The quick brown fox jumps over the lazy dog.'
 
 function Test-Port([int]$p) {
@@ -24,7 +24,7 @@ function Test-Port([int]$p) {
   } catch { return $false }
 }
 
-Write-Host '== SaySomething live-partial (growing-prefix) test =='
+Write-Host '== SayAnything live-partial (growing-prefix) test =='
 if (-not (Test-Path $model)) {
   Write-Host ('SKIP: model not found at {0}' -f $model)
   Write-Host '      Run:  node scripts/setup.js'
@@ -33,7 +33,7 @@ if (-not (Test-Path $model)) {
 
 # --- synthesize the sentence to a 16 kHz mono WAV ---
 Add-Type -AssemblyName System.Speech
-$wavPath = Join-Path $env:TEMP ('saysomething-partial-{0}.wav' -f $PID)
+$wavPath = Join-Path $env:TEMP ('sayanything-partial-{0}.wav' -f $PID)
 $fmt = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(16000, [System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen, [System.Speech.AudioFormat.AudioChannel]::Mono)
 $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
 $synth.SetOutputToWaveFile($wavPath, $fmt)

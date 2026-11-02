@@ -1,5 +1,5 @@
 #!/bin/bash
-# One-command notarized macOS release for Say Something.
+# One-command notarized macOS release for Say Anything.
 #
 #   bash scripts/notarize-mac.sh
 #
@@ -49,7 +49,7 @@ echo "=== Notarizing + stapling the disk images themselves ==="
 # electron-builder notarizes the .app inside; stapling the dmg container too
 # means even a fully offline Mac validates the download instantly. The inner
 # content is already scanned, so these submissions are quick.
-for DMG in dist/SaySomething-*.dmg; do
+for DMG in dist/SayAnything-*.dmg; do
   [ -f "$DMG" ] || continue
   if xcrun stapler validate "$DMG" >/dev/null 2>&1; then echo "already stapled: $DMG"; continue; fi
   echo "notarizing $DMG ..."
@@ -59,11 +59,11 @@ done
 
 echo
 echo "=== Verification ==="
-for APPDIR in "dist/mac-arm64/Say Something.app" "dist/mac/Say Something.app"; do
+for APPDIR in "dist/mac-arm64/Say Anything.app" "dist/mac/Say Anything.app"; do
   [ -d "$APPDIR" ] || continue
   spctl --assess --type exec "$APPDIR" && echo "spctl accepted: $APPDIR"
 done
-for DMG in dist/SaySomething-*-arm64.dmg dist/SaySomething-*-x64.dmg; do
+for DMG in dist/SayAnything-*-arm64.dmg dist/SayAnything-*-x64.dmg; do
   [ -f "$DMG" ] || continue
   xcrun stapler validate "$DMG" >/dev/null && echo "stapled: $DMG"
 done

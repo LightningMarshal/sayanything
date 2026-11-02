@@ -1,13 +1,13 @@
 @echo off
-rem Compile SaySomethingHelper.exe with the .NET Framework csc that ships with Windows.
-rem Invoked by src/main/helper.js when bin/helper/SaySomethingHelper.exe is missing,
+rem Compile SayAnythingHelper.exe with the .NET Framework csc that ships with Windows.
+rem Invoked by src/main/helper.js when bin/helper/SayAnythingHelper.exe is missing,
 rem and by scripts/setup.js. Self-locating via %~dp0 (the native/ directory).
 setlocal enableextensions
 
 set "CSC=C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-set "SRC=%~dp0SaySomethingHelper.cs"
+set "SRC=%~dp0SayAnythingHelper.cs"
 set "OUTDIR=%~dp0..\bin\helper"
-set "OUT=%OUTDIR%\SaySomethingHelper.exe"
+set "OUT=%OUTDIR%\SayAnythingHelper.exe"
 
 if not exist "%CSC%" (
   echo build.cmd: csc not found at "%CSC%" 1>&2

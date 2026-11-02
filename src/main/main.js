@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * SaySomething main process entry.
+ * SayAnything main process entry.
  *
  * Responsibilities:
  *  - single-instance lock
@@ -24,8 +24,8 @@ const path = require('path');
 const { app, BrowserWindow, ipcMain, session, Notification, dialog } = require('electron');
 
 // Set the app name before anything reads a user path, so Electron's own caches
-// live under %APPDATA%/SaySomething alongside our data (config.js anchors there too).
-try { app.setName('SaySomething'); } catch (e) { /* best-effort */ }
+// live under %APPDATA%/SayAnything alongside our data (config.js anchors there too).
+try { app.setName('SayAnything'); } catch (e) { /* best-effort */ }
 
 function safeRequire(id) {
   try {
@@ -205,7 +205,7 @@ let lastLaunchAtLogin = null;
 let setupNotice = false; // set once we've told the user to run setup (dedupes notices)
 
 function boot() {
-  logInfo('SaySomething boot: starting');
+  logInfo('SayAnything boot: starting');
 
   let settings = null;
   try {
@@ -240,7 +240,7 @@ function boot() {
     .catch(function (err) {
       logError('helper.start failed', err);
       if (!setupNotice) {
-        notify('Say Something: hotkey unavailable',
+        notify('Say Anything: hotkey unavailable',
           'The dictation hotkey may not work. Try running:  node scripts/setup.js');
       }
     });
@@ -250,12 +250,12 @@ function boot() {
   if (helper && helper.on) {
     helper.on('unavailable', function (info) {
       logError('helper unavailable after ' + (info && info.restarts) + ' restarts — hotkey is dead');
-      notify('Say Something: dictation stopped', 'The hotkey stopped responding. Restart Say Something to get dictation back.');
+      notify('Say Anything: dictation stopped', 'The hotkey stopped responding. Restart Say Anything to get dictation back.');
       try {
         const wc = windows && windows.getOverlayWC && windows.getOverlayWC();
         if (wc && ipc) {
           windows.showOverlay && windows.showOverlay();
-          wc.send(ipc.OVERLAY_STATE, { state: 'error', detail: { message: 'Dictation stopped. Restart Say Something to fix it.' } });
+          wc.send(ipc.OVERLAY_STATE, { state: 'error', detail: { message: 'Dictation stopped. Restart Say Anything to fix it.' } });
         }
       } catch (e) { /* ignore */ }
     });
@@ -299,7 +299,7 @@ function boot() {
     logError('onboarding wiring failed', e);
   }
 
-  logInfo('SaySomething boot: ready');
+  logInfo('SayAnything boot: ready');
 }
 
 function shutdown() {
@@ -348,7 +348,7 @@ function bootWhisper(settings) {
   const port = (settings && settings.whisperPort) || (config && config.DEFAULT_PORT) || 8737;
   Promise.resolve()
     .then(function () { return server && server.start && server.start(selected, port); })
-    .then(function () { logInfo('SaySomething boot: whisper server ready'); })
+    .then(function () { logInfo('SayAnything boot: whisper server ready'); })
     .catch(function (err) { logError('whisper start failed (non-fatal)', err); });
 }
 
@@ -357,17 +357,17 @@ function guideRunSetup() {
   if (setupNotice) return;
   setupNotice = true;
   const msg =
-    'Say Something needs a one-time setup before it can transcribe.\n\n' +
-    'Open a terminal in the Say Something folder and run:\n\n' +
+    'Say Anything needs a one-time setup before it can transcribe.\n\n' +
+    'Open a terminal in the Say Anything folder and run:\n\n' +
     '    node scripts/setup.js\n\n' +
     'That downloads the local speech engine and the default model (a few minutes,\n' +
-    'just once). Then start Say Something again with:  npm start\n\n' +
-    'Say Something sits in the tray meanwhile. Nothing runs until setup finishes.';
+    'just once). Then start Say Anything again with:  npm start\n\n' +
+    'Say Anything sits in the tray meanwhile. Nothing runs until setup finishes.';
   try {
-    if (dialog && dialog.showErrorBox) dialog.showErrorBox('Say Something needs a quick setup', msg);
+    if (dialog && dialog.showErrorBox) dialog.showErrorBox('Say Anything needs a quick setup', msg);
   } catch (e) { logError('setup dialog failed', e); }
-  notify('Say Something needs a quick setup',
-    'Run  node scripts/setup.js  in the Say Something folder, then restart Say Something.');
+  notify('Say Anything needs a quick setup',
+    'Run  node scripts/setup.js  in the Say Anything folder, then restart Say Anything.');
 }
 
 /** Binaries are present but no usable model: land the user on the model manager. */
@@ -378,7 +378,7 @@ function guideDownloadModel(haveOtherModel) {
   const body = haveOtherModel
     ? 'Your selected model isn’t downloaded yet. Open Settings, then Models to get it or pick another.'
     : 'No speech model yet. Open Settings, then Models to download one and you’re good to go.';
-  notify('Say Something needs a voice model', body);
+  notify('Say Anything needs a voice model', body);
 }
 
 // ---------------------------------------------------------------------------
@@ -413,7 +413,7 @@ function showOnboarding() {
     // Framed (unlike the frameless intro) so the OS close button is an escape
     // hatch: the "Start dictating" button is gated until every grant lands, and the
     // app keeps running in the tray if the user closes this to grant later.
-    title: 'Say Something',
+    title: 'Say Anything',
     webPreferences: {
       preload: path.join(preloadDir, 'welcome.js'),
       contextIsolation: true,
