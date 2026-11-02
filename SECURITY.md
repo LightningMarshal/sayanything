@@ -26,6 +26,12 @@ Known limits, stated plainly:
   real keystore exists (Linux without a keyring) it is stored as plain JSON with
   owner-only permissions and a warning is logged.
 
+Packaged builds also have Electron's security fuses set (scripts/fuses.js):
+the app cannot be run as a plain Node.js interpreter (ELECTRON_RUN_AS_NODE),
+NODE_OPTIONS and --inspect are ignored, the app only loads from its app.asar,
+and its windows get no extra file:// privileges. CI packages the Windows app,
+reads the fuses back from the built executable and runs its smoke test.
+
 ## Reporting a vulnerability
 
 Please **don't open a public issue for security problems.** Instead, use GitHub's

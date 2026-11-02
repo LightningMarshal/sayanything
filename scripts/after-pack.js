@@ -3,7 +3,8 @@
 /**
  * electron-builder `afterPack` hook (see package.json "build.afterPack").
  *
- * Runs for every platform's pack step; only acts on darwin. electron-builder's
+ * Runs for every platform's pack step. On every platform it flips the Electron
+ * fuses (scripts/fuses.js); the rest only acts on darwin. electron-builder's
  * extraResources copy (bin/ -> Contents/Resources/bin, see package.json
  * "build.extraResources") can drop the executable bit on the staged native
  * binaries, so re-assert 0755 on the two mac binaries after packing, before
@@ -14,13 +15,28 @@
  * @param {import('electron-builder').AfterPackContext} context
  */
 module.exports = async function afterPack(context) {
-  if (context.electronPlatformName !== 'darwin') return;
-
   const fs = require('fs');
   const path = require('path');
 
   const productFilename =
     (context.packager && context.packager.appInfo && context.packager.appInfo.productFilename) || 'Say Anything';
+
+  // Every platform: flip the Electron fuses on the packaged executable (see
+  // scripts/fuses.js). This runs before electron-builder signs the app, so the
+  // signature covers the flipped binary. On macOS the ad-hoc signature is
+  // refreshed so an unsigned arm64 build still launches.
+  const { applyFuses } = require('./fuses');
+  const platform = context.electronPlatformName;
+  const exe = platform === 'darwin'
+    ? path.join(context.appOutDir, productFilename + '.app')
+    : platform === 'win32'
+      ? path.join(context.appOutDir, productFilename + '.exe')
+      : path.join(context.appOutDir, (context.packager && /** @type {any} */ (context.packager).executableName) || productFilename);
+  await applyFuses(exe, { resetAdHocDarwinSignature: platform === 'darwin' });
+  console.log('after-pack: Electron fuses applied to ' + exe);
+
+  if (platform !== 'darwin') return;
+
   const resourcesDir = path.join(context.appOutDir, productFilename + '.app', 'Contents', 'Resources');
 
   const binaries = [
