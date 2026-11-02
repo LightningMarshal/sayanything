@@ -26,6 +26,8 @@ interface Window {
   SayAnythingVad: SayAnythingVadApi;
   /** Older WebKit name, used only as a fallback. */
   webkitAudioContext?: typeof AudioContext;
+  /** Shared namespace of the Settings window scripts (settings/core.js etc.). */
+  SayAnythingSettings: Record<string, any>;
   /** Debug/test hooks the renderers publish for test/*-check.js. */
   __sayanythingOverlay?: unknown;
   __sayanythingPad?: unknown;

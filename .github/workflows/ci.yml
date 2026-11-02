@@ -53,7 +53,7 @@ jobs:
         # --no-sandbox: the runner's AppArmor policy blocks Chromium's user
         # namespace sandbox; these checks load only the app's own local pages.
         run: |
-          for t in overlay-css-check settings-models-check welcome-perms-check pad-check csp-check; do
+          for t in overlay-css-check settings-models-check welcome-perms-check pad-check csp-check settings-tabs-check; do
             echo "== $t"
             xvfb-run -a npx electron "test/$t.js" --no-sandbox
           done
