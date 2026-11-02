@@ -1,0 +1,47 @@
+name: Pin model hashes
+
+# Manual only. Downloads every whisper model in the catalog (about 6 GB), hashes
+# each one, cross-checks Hugging Face's published LFS sha256, and uploads the
+# rewritten src/main/whisper/hashes.js plus the log as an artifact. Review the
+# digests, then commit the file yourself: this workflow never pushes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Comma-separated model names (blank = whole catalog)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  pin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Download, hash and cross-check models
+        shell: bash
+        env:
+          ONLY: ${{ github.event.inputs.only }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            node scripts/pin-model-hashes.js --write --only "$ONLY" | tee pin.log
+          else
+            node scripts/pin-model-hashes.js --write | tee pin.log
+          fi
+      - name: Show the proposed change
+        if: always()
+        run: git diff -- src/main/whisper/hashes.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pinned-hashes
+          path: |
+            src/main/whisper/hashes.js
+            pin.log

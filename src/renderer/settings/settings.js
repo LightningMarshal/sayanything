@@ -465,7 +465,8 @@
     meta.className = 'model-meta';
     meta.textContent = fmtSize(m.sizeMB)
       + (m.note ? ' · ' + m.note : '')
-      + (m.downloaded ? ' · downloaded' : ' · not downloaded');
+      + (m.downloaded ? ' · downloaded' : ' · not downloaded')
+      + (m.verified === false ? ' · not hash-verified (size-checked only)' : '');
 
     var side = document.createElement('div');
     side.className = 'model-side';

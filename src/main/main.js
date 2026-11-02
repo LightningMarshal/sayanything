@@ -735,6 +735,7 @@ function wireIpc() {
         sizeMB: m.sizeMB,
         note: m.note || '',
         recommended: !!m.recommended,
+        verified: !!m.verified,
         downloaded: local.indexOf(m.name) !== -1,
         active: m.name === active,
       };

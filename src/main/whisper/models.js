@@ -49,10 +49,13 @@ const CATALOG = [
 // name -> AbortController for in-flight downloads (enables cancel()).
 const inflight = new Map();
 
-/** @returns {Array<{name:string, sizeMB:number, lang:string, note:string, recommended:boolean}>} */
+/** @returns {Array<{name:string, sizeMB:number, lang:string, note:string, recommended:boolean, verified:boolean}>} */
 function catalog() {
   return CATALOG.map(function (m) {
-    return { name: m.name, sizeMB: m.sizeMB, lang: m.lang, note: m.note || '', recommended: !!m.recommended };
+    return {
+      name: m.name, sizeMB: m.sizeMB, lang: m.lang, note: m.note || '', recommended: !!m.recommended,
+      verified: Object.prototype.hasOwnProperty.call(HASHES, m.name), // SHA-256 pinned
+    };
   });
 }
 
@@ -163,7 +166,7 @@ async function download(name, onProgress) {
       throw new Error('size mismatch for ' + name + ': got ' + bytes + ' expected ' + total + ' bytes');
     }
     // Integrity: if we have a pinned digest for this model, the bytes must match.
-    const expected = HASHES[name];
+    const expected = Object.prototype.hasOwnProperty.call(HASHES, name) ? HASHES[name] : null;
     if (expected) {
       const got = await sha256File(partPath);
       if (got !== expected) {
