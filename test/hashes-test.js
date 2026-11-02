@@ -40,19 +40,24 @@ for (const n of pending) ok(names.indexOf(n) !== -1, 'PENDING names a real catal
 ok(Object.prototype.hasOwnProperty.call(PINS, 'small.en'), 'default model small.en is pinned');
 ok(Object.keys(PINS).indexOf('PENDING') === -1, 'PENDING is not enumerated as a digest');
 
-const verified = models.catalog().filter(function (m) { return m.verified; }).map(function (m) { return m.name; });
-ok(verified.indexOf('small.en') !== -1 && verified.indexOf('tiny.en') === -1, 'catalog().verified reflects pins', verified.join(','));
+// catalog().verified is true exactly for the pinned models.
+for (const m of models.catalog()) {
+  ok(m.verified === Object.prototype.hasOwnProperty.call(PINS, m.name), 'catalog().verified reflects the pin: ' + m.name);
+}
 
 // Round-trip: rewriting with the same pins/pending reproduces the same data.
 const file = path.join(__dirname, '..', 'src', 'main', 'whisper', 'hashes.js');
 const src = fs.readFileSync(file, 'utf8');
+// (independent of which models are currently pinned: uses a made-up name)
 const fake = 'a'.repeat(64);
-const next = rewriteHashesSource(src, Object.assign({}, PINS, { 'tiny.en': fake }), pending.filter(function (n) { return n !== 'tiny.en'; }));
-const m = { exports: {} };
-new Function('module', 'exports', next)(m, m.exports);
-ok(m.exports['tiny.en'] === fake, 'rewrite: new pin written');
-ok(m.exports['small.en'] === PINS['small.en'], 'rewrite: existing pin kept');
-ok(m.exports.PENDING.indexOf('tiny.en') === -1 && m.exports.PENDING.length === pending.length - 1, 'rewrite: pending shrinks');
+const load = function (text) { const mod = { exports: {} }; new Function('module', 'exports', text)(mod, mod.exports); return mod.exports; };
+const grown = load(rewriteHashesSource(src, PINS, pending.concat(['example-model'])));
+ok(grown.PENDING.indexOf('example-model') !== -1, 'rewrite: pending list written');
+const next = load(rewriteHashesSource(src, Object.assign({}, PINS, { 'example-model': fake }), pending));
+ok(next['example-model'] === fake, 'rewrite: new pin written');
+ok(next['small.en'] === PINS['small.en'], 'rewrite: existing pin kept');
+ok(next.PENDING.indexOf('example-model') === -1 && next.PENDING.length === pending.length, 'rewrite: pending shrinks');
+ok(Object.keys(next).length === Object.keys(PINS).length + 1, 'rewrite: no pin lost');
 
 console.log('hashes-test: ' + passed + ' passed, ' + failed + ' failed (' + pending.length + ' models still pending a pin)');
 process.exit(failed > 0 ? 1 : 0);
