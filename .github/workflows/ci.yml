@@ -37,6 +37,25 @@ jobs:
       - name: Windows helper compiles under C# 5
         run: scripts/check-helper-cs.sh
 
+  renderers:
+    name: Renderer checks in Electron (Linux, Xvfb)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install dependencies (with the Electron binary)
+        run: npm ci
+      - name: Overlay, settings, welcome and drop-pad checks
+        # --no-sandbox: the runner's AppArmor policy blocks Chromium's user
+        # namespace sandbox; these checks load only the app's own local pages.
+        run: |
+          for t in overlay-css-check settings-models-check welcome-perms-check pad-check; do
+            echo "== $t"
+            xvfb-run -a npx electron "test/$t.js" --no-sandbox
+          done
+
   windows:
     name: Windows helper build + self-test
     runs-on: windows-latest

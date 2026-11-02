@@ -47,10 +47,10 @@
   }
 
   function initPerms() {
-    var startBtn = document.getElementById('start');
+    var startBtn = /** @type {HTMLButtonElement} */ (document.getElementById('start'));
 
     KINDS.forEach(function (kind) {
-      var btn = document.getElementById('grant-' + kind);
+      var btn = /** @type {HTMLButtonElement} */ (document.getElementById('grant-' + kind));
       if (btn) btn.addEventListener('click', function () { request(kind); });
     });
 
@@ -78,7 +78,7 @@
 
   function request(kind) {
     if (!api || !api.invoke) return;
-    var btn = document.getElementById('grant-' + kind);
+    var btn = /** @type {HTMLButtonElement} */ (document.getElementById('grant-' + kind));
     if (btn && !btn.disabled) btn.textContent = 'Opening…';
     api.invoke('perms:request', kind).then(function (p) {
       if (p) render(p);
@@ -106,13 +106,13 @@
       if (!granted) all = false;
       var row = document.getElementById('row-' + kind);
       if (row) row.setAttribute('data-granted', granted ? 'true' : 'false');
-      var btn = document.getElementById('grant-' + kind);
+      var btn = /** @type {HTMLButtonElement} */ (document.getElementById('grant-' + kind));
       if (btn) {
         btn.disabled = granted;
         btn.textContent = granted ? 'Granted' : 'Grant';
       }
     }
-    var startBtn = document.getElementById('start');
+    var startBtn = /** @type {HTMLButtonElement} */ (document.getElementById('start'));
     if (startBtn) startBtn.disabled = !all;
   }
 

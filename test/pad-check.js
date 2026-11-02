@@ -34,8 +34,9 @@ async function checkRender() {
     '    text: text.textContent,',
     '    innerHTMLescaped: text.innerHTML.indexOf("<img") === -1,',
     '    hasImg: !!text.querySelector("img"),',
-    '    hasDrop: !!document.getElementById("drop"),',
+    '    hasGrip: !!document.getElementById("grip"),',
     '    hasCopy: !!document.getElementById("copy"),',
+    '    hasDismiss: !!document.getElementById("dismiss"),',
     '  };',
     '})()',
   ].join('\n');
@@ -45,7 +46,9 @@ async function checkRender() {
   assert(/hello world/.test(r.text), 'transcript text rendered');
   assert(r.hasImg === false, 'no <img> element created (textContent, not innerHTML)');
   assert(r.innerHTMLescaped === true, 'markup is escaped — XSS-safe');
-  assert(r.hasDrop && r.hasCopy, 'Drop/Copy buttons present');
+  // The pad is placed by dragging its grip (the old "Drop" button was removed
+  // in the drag-to-drop redesign); Copy and Dismiss remain as buttons.
+  assert(r.hasGrip && r.hasCopy && r.hasDismiss, 'drag grip, Copy and Dismiss present');
   win.destroy();
 }
 
