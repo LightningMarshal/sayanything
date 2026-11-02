@@ -334,6 +334,7 @@ final class Helper {
     // Shared state guarded by stateLock (tap thread reads, command thread writes).
     let stateLock = NSLock()
     var watchedVKs = Set<Int>()
+    var chordSent = false        // WS-5: "chord" already emitted this hold (stateLock)
     var watchedKeycodes = Set<Int>()
     var captureArmed = false
     var captureMods = [Int]()   // ordered; mirrors the C# accumulation set
@@ -568,12 +569,27 @@ final class Helper {
                     swallow = watchedModKeycodes.contains { CGEventSource.keyState(.combinedSessionState, key: CGKeyCode($0)) }
                 }
             }
+            // WS-5: a hold starts on a non-repeat press with no other watched
+            // key held and ends when the last one is released; either resets the
+            // once-per-hold chord flag.
+            let othersHeld = snapshotHeld(vks.filter { $0 != vk }).count > 0
+            let isRepeat = (type == .keyDown) && event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+            if !othersHeld && (!down || !isRepeat) { chordSent = false }
             stateLock.unlock()
             let held = snapshotHeld(vks)
             emitKey(vk, down, held)
             return swallow ? nil : Unmanaged.passUnretained(event)
         }
+        // WS-5: a NON-watched key went down while a watched key is physically
+        // held, i.e. the hotkey is part of a shortcut (Cmd+Arrow, Option+letter...).
+        // Report one bit, at most once per hold, with NO key identity or count.
+        var emitChord = false
+        if down && !chordSent && !watchedVKs.isEmpty && !snapshotHeld(Array(watchedVKs)).isEmpty {
+            chordSent = true
+            emitChord = true
+        }
         stateLock.unlock()
+        if emitChord { emitSimple("chord") }
         return Unmanaged.passUnretained(event)
     }
 

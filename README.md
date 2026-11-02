@@ -156,7 +156,7 @@ Full spec is in [`docs/SPEC.md`](docs/SPEC.md), module layout in [`docs/CONTRACT
 
 Privacy here isn't a setting, it's how the thing is built.
 
-- **The keyboard hook only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing.
+- **The keyboard hook only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing. One bit is the exception: if you press some other key while holding the hotkey (Ctrl+Arrow, or AltGr+Q to type @), the hook says "another key was pressed" so that shortcut doesn't start a dictation. It never says which key.
 - **Audio only lives in memory** and never hits disk. The WAV exists just long enough to POST to the local server.
 - **Whisper binds `127.0.0.1` only.** With AI rewrite off (the default), there are zero network calls at runtime, period.
 - **The optional rewrite only talks to localhost.** If (and only if) you turn it on, it POSTs to a local model server (Ollama on `127.0.0.1:11434` by default). The endpoint is configurable, but any non-loopback address is refused in code. No cloud, ever.

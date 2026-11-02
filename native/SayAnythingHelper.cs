@@ -614,6 +614,31 @@ static class SayAnythingHelper
         }
     }
 
+    // WS-5 chord flag: true once "chord" was emitted for the current hold, so it
+    // is sent at most once per hold. Hook thread only.
+    static bool _chordSent = false;
+
+    // A hold starts when a watched key goes down with no watched key held before
+    // it, and ends when the last held watched key goes up. Either resets the flag.
+    // `heldBefore` is the physical state before this event (GetAsyncKeyState in a
+    // low-level hook does not yet include the event being processed).
+    static void ResetChordIfNewOrEndedHold(int vk, bool down, int[] heldBefore)
+    {
+        int others = 0;
+        for (int i = 0; i < heldBefore.Length; i++) if (heldBefore[i] != vk) others++;
+        if (others > 0) return;
+        if (down)
+        {
+            bool repeat = false;
+            for (int i = 0; i < heldBefore.Length; i++) if (heldBefore[i] == vk) repeat = true;
+            if (!repeat) _chordSent = false;   // fresh hold
+        }
+        else
+        {
+            _chordSent = false;                // last watched key released
+        }
+    }
+
     static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
         if (nCode >= 0)
@@ -640,7 +665,18 @@ static class SayAnythingHelper
                         HashSet<int> watched = _watched;
                         if (watched.Contains(vk))
                         {
-                            EmitKey(vk, down, SnapshotHeld(watched));
+                            int[] held = SnapshotHeld(watched); // state BEFORE this event
+                            ResetChordIfNewOrEndedHold(vk, down, held);
+                            EmitKey(vk, down, held);
+                        }
+                        else if (down && !_chordSent && SnapshotHeld(watched).Length > 0)
+                        {
+                            // WS-5: some NON-watched key went down while a watched
+                            // key is physically held, i.e. the hotkey is part of a
+                            // shortcut (Ctrl+Arrow, AltGr+Q...). Report one bit, at
+                            // most once per hold, with NO key identity or count.
+                            _chordSent = true;
+                            EmitSimple("chord");
                         }
                     }
                 }

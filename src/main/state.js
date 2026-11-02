@@ -11,7 +11,11 @@
  *  - hotkey DOWN (idle / transcribing): start a NEW session — overlay `listening`,
  *    audio:start, note t0.
  *  - hotkey UP: held < 250 ms => latch (stay recording, hands-free); else finalize.
- *  - hotkey DOWN (latched): finalize.
+ *  - hotkey DOWN (latched): 'stopping'; finalize on the matching UP.
+ *  - chord (WS-5): the helper reports, with no key identity, that some other
+ *    key went down while a watched key was held. A 'pressing' session is then a
+ *    keyboard shortcut (Ctrl+Arrow, AltGr+Q...), not dictation: it is dropped
+ *    silently. A 'stopping' press on a latched session reverts to 'latched'.
  *  - Esc DOWN (recording only): cancel — audio:abort, overlay `cancelled`, nothing
  *    inserted. Esc(27) is added to the watched set only while recording.
  *  - Auto-finalize at maxUtteranceSec (default 300 s).
@@ -386,6 +390,33 @@ function createStateMachine(deps) {
     });
   }
 
+  // Drop a session that turned out to be a keyboard shortcut: like cancel(), but
+  // the pill simply disappears (no "cancelled" flash for something the user never
+  // meant as dictation).
+  function discardAsShortcut(session) {
+    if (recording !== session) return;
+    recording = null;
+    session.aborted = true;
+    if (session.maxTimer) { clearTimer(session.maxTimer); session.maxTimer = null; }
+    streaming.stop(session.id);
+    updateWatch(false);
+    try { audioSession.abort(session.id); } catch (e) { log.error('state: abort failed', e); }
+    if (overlayOwner === session.id) {
+      overlayOwner = null;
+      clearHide();
+      try { windows.hideOverlay(); } catch (e) { /* ignore */ }
+      sendOverlayState('hidden', {});
+    }
+    log.info('state: session ' + session.id + ' was a keyboard shortcut — discarded');
+  }
+
+  function onChord() {
+    const s = recording;
+    if (!s) return;
+    if (s.phase === 'pressing') discardAsShortcut(s);
+    else if (s.phase === 'stopping') s.phase = 'latched'; // Ctrl+C mid-dictation: keep going
+  }
+
   function cancel(session) {
     if (recording !== session) return;
     recording = null;
@@ -581,9 +612,10 @@ function createStateMachine(deps) {
     if (settingsStore.get().paused) return;
 
     if (recording) {
-      // A latched (hands-free) session is ended by pressing ITS OWN hotkey again. A
+      // A latched (hands-free) session is ended by pressing ITS OWN hotkey again,
+      // on release, so a shortcut using that key (chord) can be told apart. A
       // 'pressing' session cannot receive another DOWN without an UP first.
-      if (recording.phase === 'latched' && recording.vk === vk) finalize(recording);
+      if (recording.phase === 'latched' && recording.vk === vk) recording.phase = 'stopping';
       return;
     }
 
@@ -596,7 +628,9 @@ function createStateMachine(deps) {
     heldVk = 0;
 
     if (settingsStore.get().paused) return;
-    if (!recording || recording.phase !== 'pressing' || recording.vk !== vk) return;
+    if (!recording || recording.vk !== vk) return;
+    if (recording.phase === 'stopping') { finalize(recording); return; }
+    if (recording.phase !== 'pressing') return;
 
     const held = now() - recording.t0;
     if (held < TAP_MS) {
@@ -711,6 +745,7 @@ function createStateMachine(deps) {
     try { autoStopEnabled = autoStopCfg(settingsStore.get()).enabled; } catch (e) { /* default false */ }
 
     helper.on('key', onKey);
+    helper.on('chord', onChord);
 
     helper.on('crash', function (info) {
       log.warn('state: helper crashed (code=' + (info && info.code) + ') — supervisor will restart');

@@ -80,7 +80,8 @@ Electron → helper (`{"cmd": ...}` one per line):
 
 Helper → Electron (`{"evt": ...}`):
 - `{"evt":"ready"}` (once, after hook installed) · `{"evt":"pong"}`
-- `{"evt":"key","vk":163,"down":true}` — watched VKs only, never injected input
+- `{"evt":"key","vk":163,"down":true,"held":[163]}` — watched VKs only, never injected input. `held` is the real-time physical state of every watched VK (GetAsyncKeyState / CGEventSource.keyState), so a key-up missed across a lock screen cannot leave a modifier stuck.
+- `{"evt":"chord"}` — no fields. Sent at most once per hold when a NON-watched key goes down while any watched key is physically held. Carries no key identity, code or count. `state.js` discards a still-'pressing' session as a keyboard shortcut (no dictation, pill hidden) and keeps a latched session running when its hotkey was pressed as part of a shortcut. A latched session now finalizes on the release of its hotkey, not the press.
 - `{"evt":"captured","vk":84,"name":"T","mods":[164]}` — trigger vk + name plus the physical modifier VKs held (empty for a bare key)
 - `{"evt":"pasted","ok":true}` / `{"evt":"typed","ok":true}` / `{"evt":"copied","ok":true}` / `{"evt":"placed","ok":true}` (`"ok":false,"err":"..."` on failure)
 - `{"evt":"picked","x":N,"y":N}` — one-shot mouse pick result (armed by `pickPoint`)

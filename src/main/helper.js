@@ -277,6 +277,11 @@ class Helper extends EventEmitter {
           held: Array.isArray(obj.held) ? obj.held.map(function (v) { return v | 0; }) : null,
         });
         break;
+      case 'chord':
+        // WS-5: one bit, no key identity: a non-watched key went down while a
+        // watched key was held (the hotkey was part of a shortcut).
+        this.emit('chord');
+        break;
       case 'captured': {
         const mods = [];
         if (Array.isArray(obj.mods)) {

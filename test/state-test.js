@@ -367,6 +367,91 @@ scenario('pad disabled: pad key starts nothing', async function () {
   eq(h.audio.begun.length, 0, 'pad disabled: no session');
 });
 
+// ---- WS-5: chords (hotkey used as part of a shortcut) -----------------------
+// The helper reports only `chord` (no key identity) when some non-watched key
+// goes down while a watched key is held.
+
+scenario('chord: Right Ctrl + Arrow (quick) does not latch or dictate', async function () {
+  const h = harness();
+  h.key(RCTRL, true);
+  h.advance(60);
+  h.helper.emit('chord');
+  h.advance(60);
+  h.key(RCTRL, false);               // < TAP_MS: would have latched before WS-5
+  await settle();
+  eq(h.sm._peek().recording, null, 'chord quick: no latched session left open');
+  eq(h.audio.aborted.length, 1, 'chord quick: mic capture aborted');
+  eq(h.pastes(), [], 'chord quick: nothing pasted');
+  eq(h.overlay.indexOf('cancelled'), -1, 'chord quick: no "cancelled" flash, just hidden');
+  eq(h.overlay[h.overlay.length - 1], 'hidden', 'chord quick: overlay hidden');
+});
+
+scenario('chord: long hold then a shortcut key is still a shortcut', async function () {
+  const h = harness();
+  h.key(RCTRL, true);
+  h.advance(1500);
+  h.helper.emit('chord');
+  h.advance(100);
+  h.key(RCTRL, false);
+  await settle();
+  eq(h.pastes(), [], 'chord long: nothing pasted');
+  eq(h.sm._peek().recording, null, 'chord long: idle');
+});
+
+scenario('chord: AltGr typing (@, euro) never opens the drop pad', async function () {
+  const h = harness();
+  for (let i = 0; i < 3; i++) {
+    h.key(RALT, true);
+    h.advance(40);
+    h.helper.emit('chord');          // e.g. AltGr+Q = @ on a German layout
+    h.advance(40);
+    h.key(RALT, false);
+    h.advance(500);
+  }
+  await settle();
+  eq(h.copies(), [], 'altgr: no pad copy');
+  eq(h.sm._peek().padText, null, 'altgr: no pad text');
+  eq(h.sm._peek().recording, null, 'altgr: idle');
+});
+
+scenario('chord: Ctrl+C during hands-free dictation keeps dictating', async function () {
+  const h = harness();
+  h.press(RCTRL, 100);               // latch
+  h.advance(2000);
+  h.key(RCTRL, true);                // user presses Right Ctrl + C mid-dictation
+  h.helper.emit('chord');
+  h.key(RCTRL, false);
+  await settle();
+  eq(h.sm._peek().recording && h.sm._peek().recording.phase, 'latched', 'latched chord: still recording');
+  eq(h.pastes(), [], 'latched chord: nothing pasted yet');
+  h.advance(1000);
+  h.press(RCTRL, 80);                // a clean tap ends it
+  await settle();
+  eq(h.pastes(), ['Hello world '], 'latched chord: clean tap finalizes');
+});
+
+scenario('chord: second tap on a latched session finalizes on release', async function () {
+  const h = harness();
+  h.press(RCTRL, 100);
+  h.advance(1000);
+  h.key(RCTRL, true);
+  await settle();
+  eq(h.pastes(), [], 'latched stop: not finalized on key-down (could still be a chord)');
+  h.key(RCTRL, false);
+  await settle();
+  eq(h.pastes(), ['Hello world '], 'latched stop: finalized on release');
+});
+
+scenario('chord: ignored when idle or already transcribing', async function () {
+  const h = harness();
+  h.helper.emit('chord');
+  eq(h.sm._peek().recording, null, 'chord idle: no-op');
+  h.press(RCTRL, 400);
+  h.helper.emit('chord');            // after release: session already finalized
+  await settle();
+  eq(h.pastes(), ['Hello world '], 'chord after release: dictation unaffected');
+});
+
 // ---------------------------------------------------------------------------
 
 (async function main() {
