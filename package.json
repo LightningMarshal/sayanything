@@ -33,7 +33,7 @@
     "prep": "node scripts/stage-bundle.js",
     "dist:dir": "npm run prep && electron-builder --dir",
     "dist": "npm run prep && electron-builder",
-    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js && node test/state-test.js && node test/hashes-test.js",
+    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js && node test/state-test.js && node test/hashes-test.js && node test/docs-drift-test.js",
     "lint": "eslint .",
     "typecheck": "tsc -p .",
     "check": "npm run lint && npm run typecheck && npm test",
@@ -50,9 +50,13 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "!assets/demo.gif",
+      "!assets/social-preview.png",
+      "!assets/screenshots/**",
       "native/**/*",
-      "docs/**/*",
-      "package.json"
+      "package.json",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
     ],
     "extraResources": [
       {

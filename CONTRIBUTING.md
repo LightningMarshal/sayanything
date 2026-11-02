@@ -12,24 +12,29 @@ node scripts/setup.js  # unpacks whisper binaries, compiles the native helper, d
 npm start            # electron . — tray app, overlay hidden until first use
 ```
 
-`scripts/setup.js` is idempotent and safe to re-run. It is the **only** part of SayAnything that touches the network (whisper binaries from GitHub, models from Hugging Face). Useful flags: `--model <name>`, `--no-model`, `-h`.
+`scripts/setup.js` is idempotent and safe to re-run. Apart from the Model tab's optional downloads (Hugging Face) and the opt-in loopback-only rewrite, it is the only part of Say Anything that touches the network (whisper binaries from GitHub, models from Hugging Face). Useful flags: `--model <name>`, `--no-model`, `-h`.
 
 ## Tests
 
 ```sh
-npm test                      # unit tests: formatter + WAV assembly
-npm run smoke                 # electron . --smoke — headless self-test (settings, helper, binaries, server boot)
-node test/helper-selftest.js  # compiles + drives the real SayAnythingHelper.exe end to end
-test/e2e-transcribe.ps1       # full loop w/o a mic: TTS -> WAV -> POST to whisper -> assert words (PowerShell)
+npm run check                 # lint (ESLint) + typecheck (tsc --checkJs) + npm test. Run before every PR.
+npm test                      # plain-node tests: formatter, rewrite sanitizer, WAV, VAD, streaming,
+                              #   hotkey matching, settings defaults, state machine, hash pins, docs drift
+scripts/check-helper-cs.sh    # compile-check the Windows helper under C# 5 with Mono (Linux/macOS)
+npm run smoke                 # electron . --smoke: headless self-test (settings, helper, binaries, server boot)
+npm run test:electron         # renderer checks that need Electron
+node test/helper-selftest.js  # compiles + drives the real native helper end to end (Windows or macOS)
+npm run test:e2e              # full loop without a mic: TTS -> WAV -> whisper -> assert words (macOS/Linux .sh)
+test/e2e-transcribe.ps1       # the same on Windows (PowerShell)
 ```
 
-Run `npm test` before opening a PR. If you touch the native helper, also run `node test/helper-selftest.js`. If you touch the audio/whisper path, run `test/e2e-transcribe.ps1`.
+If you touch the native helper, also run `node test/helper-selftest.js` on that platform. If you touch the audio/whisper path, run the e2e test. Behaviour that needs a real desktop (clipboard history, keyboard layouts) is in `docs/MANUAL-TESTS.md`. If you change the helper protocol, IPC channels or settings, update `docs/CONTRACTS.md`; `test/docs-drift-test.js` fails otherwise.
 
 ## Hard constraints
 
 These are enforced by the spec (`docs/SPEC.md`). PRs that violate them will not be merged.
 
-- **Zero runtime npm dependencies.** `electron` is the only devDependency. Do not add runtime deps. Downloads use Node's built-in `fetch`; unzipping uses `C:\Windows\System32\tar.exe` (bsdtar).
+- **Zero runtime npm dependencies.** Dev-only tooling (Electron, electron-builder, ESLint, TypeScript for type checking) is fine and never ships; CI fails if `dependencies` is non-empty. Do not add runtime deps. Downloads use Node's built-in `fetch`; unzipping uses `C:\Windows\System32\tar.exe` (bsdtar).
 - **No bundler, no framework.** Main process is CommonJS; renderers are vanilla HTML/CSS/JS. No webpack/vite/React/etc.
 - **C# 5 only for `native/SayAnythingHelper.cs`.** It is compiled by the .NET Framework `csc.exe` (`v4.0.30319`) that ships with Windows, which only supports C# 5: no string interpolation (`$"..."`), no null-conditional (`?.`), no `nameof`, no expression-bodied members, no `out var`, no pattern matching, no tuples. `async/await` is fine. Keep it in ONE file; hand-roll JSON (no external libs). The helper source is committed and auditable; the exe is never downloaded.
 - **Privacy rules (non-negotiable):**
