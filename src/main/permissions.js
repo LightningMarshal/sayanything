@@ -183,7 +183,9 @@ function allGranted() {
  */
 function openPane(kind) {
   if (!IS_DARWIN) return Promise.resolve(false);
-  const url = PANE_URL[kind];
+  // Own keys only: `kind` comes from a renderer, so 'constructor' or '__proto__'
+  // must not resolve to an inherited Object property.
+  const url = Object.prototype.hasOwnProperty.call(PANE_URL, kind) ? PANE_URL[kind] : null;
   if (!url) return Promise.resolve(false);
   try {
     return Promise.resolve(shell.openExternal(url)).then(

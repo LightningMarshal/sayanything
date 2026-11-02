@@ -47,11 +47,11 @@ jobs:
           node-version: '24'
       - name: Install dependencies (with the Electron binary)
         run: npm ci
-      - name: Overlay, settings, welcome and drop-pad checks
+      - name: Overlay, settings, welcome, drop-pad and CSP checks
         # --no-sandbox: the runner's AppArmor policy blocks Chromium's user
         # namespace sandbox; these checks load only the app's own local pages.
         run: |
-          for t in overlay-css-check settings-models-check welcome-perms-check pad-check; do
+          for t in overlay-css-check settings-models-check welcome-perms-check pad-check csp-check; do
             echo "== $t"
             xvfb-run -a npx electron "test/$t.js" --no-sandbox
           done
