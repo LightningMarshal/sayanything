@@ -15,5 +15,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src/main/**/*.js", "src/preload/**/*.js", "test/*-test.js", "scripts/*.js"]
+  "exclude": ["src/renderer/overlay/worklet.js"],
+  "include": ["src/main/**/*.js", "src/renderer/**/*.js", "src/renderer/globals.d.ts", "src/preload/**/*.js", "test/*-test.js", "scripts/*.js"]
 }
