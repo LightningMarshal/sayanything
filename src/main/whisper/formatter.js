@@ -58,7 +58,7 @@ var FORMAT_KEYS = [
  * @returns {{artifactStrip:boolean,voiceCommands:boolean,fillerRemoval:boolean,autoCapitalize:boolean,trailingSpace:boolean}}
  */
 function normalize(fmt) {
-  var out = {};
+  var out = /** @type {any} */ ({});
   for (var i = 0; i < FORMAT_KEYS.length; i++) {
     var k = FORMAT_KEYS[i];
     out[k] = !(fmt && fmt[k] === false);

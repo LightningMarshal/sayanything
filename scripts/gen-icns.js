@@ -28,6 +28,7 @@ const PNG_SRC = path.join(ASSETS_DIR, 'SayAnything.png');
 const ICNS_OUT = path.join(ASSETS_DIR, 'SayAnything.icns');
 
 // macOS iconset naming convention: [file name, pixel size].
+/** @type {Array<[string, number]>} */
 const ICONSET_SIZES = [
   ['icon_16x16.png', 16],
   ['icon_16x16@2x.png', 32],

@@ -79,6 +79,32 @@ Both artifacts are **unsigned**, so Windows SmartScreen says "unknown publisher"
 - **Drop pad**: drag-to-drop (was click-to-place).
 - Reviewed after each feature; the review-found bugs (hotkey mis-route, stale-modifier misfire, loopback redirect bypass) are fixed.
 
+## Fork remediation status (Say Anything, 2026-11-02)
+
+Work items from the fork review (IDs WS-0 to WS-15). "CI" means verified by the
+three-platform GitHub Actions workflow; "hardware" means it still needs a real
+desktop, see `docs/MANUAL-TESTS.md`.
+
+| ID | Item | Status |
+|---|---|---|
+| WS-0 | Rebrand to Say Anything, scrub previous maintainer details | Done |
+| WS-1 | Rewrite sanitizer could delete dictated text | Fixed, tests |
+| WS-2 | Dictations in clipboard history / cloud clipboard | Fixed; Windows opt-out formats verified in CI; hardware check pending |
+| WS-3 | Clipboard restore lost rich content | Fixed (all formats, bounded); HTML restore verified in CI |
+| WS-4 | Download integrity | Mac whisper commit pinned; 8 model digests pending (run the "Pin model hashes" workflow) |
+| WS-5 | Hotkey shortcuts (Ctrl+Arrow, AltGr) misfire | Fixed with the one-bit `chord` event; hardware check pending |
+| WS-6 | State machine untestable | Refactored, 21 scenarios |
+| WS-7 | CI Windows-only | Linux + Windows + macOS jobs, lint, types, smoke |
+| WS-8 | Doc drift, docs shipped in installer | Fixed; docs-drift test guards it |
+| WS-9 | Insert without the clipboard (UIA / AX) | Not started |
+| WS-10 | History privacy | Off by default, encrypted at rest, fail closed |
+| WS-11 | Boot fails silently | Required modules now fatal with a dialog |
+| WS-12 | Distribution and trust (signing, releases, fuses) | Deferred by the owner: code signing (Windows certificate, Apple Developer ID) is a future feature, after every review category is above 9 |
+| WS-13 | Unfinished code review | Not started |
+| WS-14 | Empirical "100% local" egress test | Not started (needs hardware) |
+| WS-15 | Product ideas | Owner's call |
+| Linux | Port | Plan in `docs/LINUX-PORT.md` revised: Wayland portals first (SteamOS KDE + Ubuntu GNOME), Flatpak; L3-L4 open |
+
 ## Roadmap / open items
 
 - **macOS port** — DONE (Apple Silicon + Intel). The Swift helper (`native/SayAnythingHelper.swift`) speaks the same stdio protocol as the C# one (Windows-VK translation at the boundary, so settings stay portable), whisper.cpp builds locally with Metal (`scripts/build-whisper-mac.sh`), first-run TCC onboarding lives in the welcome window, and electron-builder makes a dmg+zip per arch. The two native binaries (the Swift helper and whisper-server) are universal (arm64 + x86_64 via lipo), so the one bundled `bin/` tree runs on both; the Intel whisper slice is CPU/Accelerate (no Metal). Guide: `docs/MAC-PORT.md`, pinned decisions: `docs/MAC-PORT-ADDENDUM.md`. Remaining: a live hands-on dictation pass after granting TCC, and Developer ID signing/notarization (steps in MAC-PORT.md §8).

@@ -11,13 +11,20 @@ Known limits, stated plainly:
 
 - **Download verification is partial.** The Windows whisper binary zip and the
   default `small.en` model are checked against pinned SHA-256 digests. Other
-  catalog models are currently checked for size only. On macOS, whisper.cpp is
-  built from a git tag, not a pinned commit. Pinning both is tracked work.
-- **Clipboard.** Text is inserted by a clipboard swap. Until clipboard-history
-  opt-out formats are added, Windows clipboard history, cloud clipboard sync and
-  third-party clipboard managers can capture dictated text.
-- **History.** When enabled, dictation history is stored unencrypted in the app's
-  data folder. It is off by default.
+  catalog models are currently checked for size only and are labelled "not
+  hash-verified" in the app; `scripts/pin-model-hashes.js` (or the "Pin model
+  hashes" workflow) pins them after cross-checking Hugging Face's own LFS
+  digests. On macOS, whisper.cpp is built from tag v1.9.1 and the build fails
+  unless the tag resolves to the pinned commit
+  f049fff95a089aa9969deb009cdd4892b3e74916.
+- **Clipboard.** Text is inserted by a clipboard swap. The temporary entry and
+  drop-pad copies carry the Windows clipboard-history / cloud-clipboard opt-out
+  formats and the macOS concealed/transient pasteboard types. Third-party
+  clipboard managers may ignore these markers.
+- **History.** Off by default. When enabled it is encrypted at rest with the OS
+  keystore (Electron safeStorage: DPAPI on Windows, Keychain on macOS). Where no
+  real keystore exists (Linux without a keyring) it is stored as plain JSON with
+  owner-only permissions and a warning is logged.
 
 ## Reporting a vulnerability
 

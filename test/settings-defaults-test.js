@@ -41,6 +41,8 @@ eq(store.DEFAULTS.history.enabled, false, 'defaults: history is off');
 eq(store.get().history.enabled, false, 'fresh install: history is off');
 eq(store.DEFAULTS.rewrite.enabled, false, 'defaults: rewrite is off');
 eq(store.get().rewrite.enabled, false, 'fresh install: rewrite is off');
+eq(store.DEFAULTS.pad.excludeFromClipboardHistory, true, 'defaults: drop-pad copies kept out of clipboard history');
+eq(store.get().pad.excludeFromClipboardHistory, true, 'fresh install: drop-pad copies kept out of clipboard history');
 
 // An existing user's explicit opt-in is preserved across a reload.
 store.set({ history: { enabled: true } });

@@ -277,6 +277,11 @@ class Helper extends EventEmitter {
           held: Array.isArray(obj.held) ? obj.held.map(function (v) { return v | 0; }) : null,
         });
         break;
+      case 'chord':
+        // WS-5: one bit, no key identity: a non-watched key went down while a
+        // watched key was held (the hotkey was part of a shortcut).
+        this.emit('chord');
+        break;
       case 'captured': {
         const mods = [];
         if (Array.isArray(obj.mods)) {
@@ -408,9 +413,18 @@ class Helper extends EventEmitter {
     return this._request(this._typeQ, payload, TYPE_TIMEOUT_MS);
   }
 
-  /** Set the clipboard WITHOUT pasting (drop pad auto-copy). @param {string} text */
-  copy(text) {
-    const payload = { cmd: 'clipboard', text: (text == null ? '' : String(text)) };
+  /**
+   * Set the clipboard WITHOUT pasting (drop pad auto-copy).
+   * @param {string} text
+   * @param {{noHistory?: boolean}} [opts] noHistory: ask clipboard history,
+   *   cloud clipboard and clipboard managers not to record this entry.
+   */
+  copy(text, opts) {
+    const payload = {
+      cmd: 'clipboard',
+      text: (text == null ? '' : String(text)),
+      noHistory: !!(opts && opts.noHistory),
+    };
     return this._request(this._copyQ, payload, TYPE_TIMEOUT_MS);
   }
 

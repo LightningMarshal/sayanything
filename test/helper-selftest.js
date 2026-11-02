@@ -296,7 +296,90 @@ async function runWindows() {
     check('copy -> clipboard set', false, e && e.message);
   }
 
+  // 7. WS-2: a noHistory copy carries the three Windows opt-out formats, and
+  // 8. WS-3: a paste restores rich clipboard content (HTML), not just text.
+  //    Both read the clipboard through PowerShell (STA). If the runner has no
+  //    usable clipboard session the read fails and the check is reported as
+  //    SKIPPED rather than flaking; on a desktop it is a real assertion.
+  await clipboardFormatChecks(helper);
+
   try { helper.stop(); } catch (e) { /* ignore */ }
+}
+
+function psClipboard(script) {
+  const cp = require('child_process');
+  const pre = 'Add-Type -AssemblyName System.Windows.Forms; ';
+  return cp.execFileSync('powershell', ['-NoProfile', '-STA', '-Command', pre + script],
+    { encoding: 'utf8', timeout: 15000 }).trim();
+}
+
+function skip(name, why) {
+  console.log('SKIP ' + name + (why ? ' (' + why + ')' : ''));
+}
+
+async function clipboardFormatChecks(helper) {
+  const listFormats = '[System.Windows.Forms.Clipboard]::GetDataObject().GetFormats() -join "|"';
+
+  // 7. noHistory copy -> opt-out formats present
+  const name7 = 'copy(noHistory) -> clipboard-history opt-out formats present';
+  try {
+    const res = await helper.copy('sayanything-selftest-private-' + process.pid, { noHistory: true });
+    let fmts = null;
+    try { fmts = psClipboard(listFormats); } catch (e) { fmts = null; }
+    if (fmts === null) { skip(name7, 'clipboard not readable on this runner'); }
+    else {
+      const need = ['ExcludeClipboardContentFromMonitorProcessing', 'CanIncludeInClipboardHistory', 'CanUploadToCloudClipboard'];
+      const have = fmts.split('|');
+      const missing = need.filter(function (f) { return have.indexOf(f) === -1; });
+      check(name7, res && res.ok === true && missing.length === 0, missing.length ? ('missing: ' + missing.join(',')) : '');
+    }
+  } catch (e) {
+    check(name7, false, e && e.message);
+  }
+
+  // 7b. plain copy (pad setting off / history click) -> no opt-out formats
+  const name7b = 'copy() -> ordinary clipboard entry (no opt-out formats)';
+  try {
+    const res = await helper.copy('sayanything-selftest-public-' + process.pid);
+    let fmts = null;
+    try { fmts = psClipboard(listFormats); } catch (e) { fmts = null; }
+    if (fmts === null) { skip(name7b, 'clipboard not readable on this runner'); }
+    else {
+      check(name7b, res && res.ok === true && fmts.indexOf('CanIncludeInClipboardHistory') === -1, 'formats=' + fmts);
+    }
+  } catch (e) {
+    check(name7b, false, e && e.message);
+  }
+
+  // 8. paste restores HTML + text the user had copied
+  const name8 = 'paste -> restores rich (HTML) clipboard content afterwards';
+  try {
+    let seeded = true;
+    try {
+      psClipboard('$d = New-Object System.Windows.Forms.DataObject; ' +
+        '$d.SetData([System.Windows.Forms.DataFormats]::Html, "Version:0.9\r\nStartHTML:0\r\nEndHTML:0\r\nStartFragment:0\r\nEndFragment:0\r\n<b>rich-selftest</b>"); ' +
+        '$d.SetData([System.Windows.Forms.DataFormats]::UnicodeText, "rich-selftest"); ' +
+        '[System.Windows.Forms.Clipboard]::SetDataObject($d, $true)');
+    } catch (e) { seeded = false; }
+    if (!seeded) { skip(name8, 'clipboard not writable on this runner'); }
+    else {
+      const res = await helper.paste('SayAnything restore test ', 60);
+      await new Promise(function (r) { setTimeout(r, 200); });
+      let fmts = null;
+      let text = null;
+      try {
+        fmts = psClipboard(listFormats);
+        text = psClipboard('[System.Windows.Forms.Clipboard]::GetText()');
+      } catch (e) { fmts = null; }
+      if (fmts === null) { skip(name8, 'clipboard not readable on this runner'); }
+      else {
+        const ok = res && res.ok === true && fmts.split('|').indexOf('HTML Format') !== -1 && text === 'rich-selftest';
+        check(name8, ok, 'formats=' + fmts + ' text=' + JSON.stringify(text));
+      }
+    }
+  } catch (e) {
+    check(name8, false, e && e.message);
+  }
 }
 
 // --- MANUAL ONLY: watch + captured round-trip -------------------------

@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -236,8 +237,6 @@ static class SayAnythingHelper
     static readonly object _pickLock = new object();
     static System.Threading.Timer _pickTimer;
 
-    static bool _warnedNonText = false;
-
     // STA injection worker queue.
     static readonly object _jobLock = new object();
     static readonly Queue<Job> _jobs = new Queue<Job>();
@@ -249,6 +248,7 @@ static class SayAnythingHelper
         public int restoreMs;
         public int x;           // screen point for kind 3 (placeAt)
         public int y;
+        public bool noHistory;  // kind 2: mark the clipboard entry history/cloud-excluded
     }
 
     // ---- Entry point -----------------------------------------------------
@@ -393,7 +393,12 @@ static class SayAnythingHelper
             obj.TryGetValue("text", out t);
             string text = t as string;
             if (text == null) text = "";
-            EnqueueJob(2, text, 0);
+            // "noHistory": true asks Windows clipboard history, cloud clipboard
+            // and clipboard monitors not to record this entry (drop-pad setting).
+            object nh;
+            obj.TryGetValue("noHistory", out nh);
+            bool noHistory = (nh is bool) && (bool)nh;
+            EnqueueJob(2, text, 0, 0, 0, noHistory);
         }
         else if (cmd == "placeAt")
         {
@@ -609,6 +614,31 @@ static class SayAnythingHelper
         }
     }
 
+    // WS-5 chord flag: true once "chord" was emitted for the current hold, so it
+    // is sent at most once per hold. Hook thread only.
+    static bool _chordSent = false;
+
+    // A hold starts when a watched key goes down with no watched key held before
+    // it, and ends when the last held watched key goes up. Either resets the flag.
+    // `heldBefore` is the physical state before this event (GetAsyncKeyState in a
+    // low-level hook does not yet include the event being processed).
+    static void ResetChordIfNewOrEndedHold(int vk, bool down, int[] heldBefore)
+    {
+        int others = 0;
+        for (int i = 0; i < heldBefore.Length; i++) if (heldBefore[i] != vk) others++;
+        if (others > 0) return;
+        if (down)
+        {
+            bool repeat = false;
+            for (int i = 0; i < heldBefore.Length; i++) if (heldBefore[i] == vk) repeat = true;
+            if (!repeat) _chordSent = false;   // fresh hold
+        }
+        else
+        {
+            _chordSent = false;                // last watched key released
+        }
+    }
+
     static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
         if (nCode >= 0)
@@ -635,7 +665,18 @@ static class SayAnythingHelper
                         HashSet<int> watched = _watched;
                         if (watched.Contains(vk))
                         {
-                            EmitKey(vk, down, SnapshotHeld(watched));
+                            int[] held = SnapshotHeld(watched); // state BEFORE this event
+                            ResetChordIfNewOrEndedHold(vk, down, held);
+                            EmitKey(vk, down, held);
+                        }
+                        else if (down && !_chordSent && SnapshotHeld(watched).Length > 0)
+                        {
+                            // WS-5: some NON-watched key went down while a watched
+                            // key is physically held, i.e. the hotkey is part of a
+                            // shortcut (Ctrl+Arrow, AltGr+Q...). Report one bit, at
+                            // most once per hold, with NO key identity or count.
+                            _chordSent = true;
+                            EmitSimple("chord");
                         }
                     }
                 }
@@ -657,7 +698,13 @@ static class SayAnythingHelper
 
     static void EnqueueJob(int kind, string text, int restoreMs, int x, int y)
     {
+        EnqueueJob(kind, text, restoreMs, x, y, false);
+    }
+
+    static void EnqueueJob(int kind, string text, int restoreMs, int x, int y, bool noHistory)
+    {
         Job j = new Job();
+        j.noHistory = noHistory;
         j.kind = kind;
         j.text = text;
         j.restoreMs = restoreMs;
@@ -686,15 +733,15 @@ static class SayAnythingHelper
             if (j == null) continue;
             if (j.kind == 0) DoPaste(j.text, j.restoreMs);
             else if (j.kind == 1) DoType(j.text);
-            else if (j.kind == 2) DoCopy(j.text);
+            else if (j.kind == 2) DoCopy(j.text, j.noHistory);
             else if (j.kind == 3) DoPlaceAt(j.x, j.y, j.text, j.restoreMs);
         }
     }
 
-    static void DoCopy(string text)
+    static void DoCopy(string text, bool noHistory)
     {
         string err = null;
-        try { if (!TrySetClipboardText(text)) err = "could not set clipboard"; }
+        try { if (!TrySetClipboardText(text, noHistory)) err = "could not set clipboard"; }
         catch (Exception ex) { err = ex.Message; }
         EmitResult("copied", err);
     }
@@ -704,17 +751,13 @@ static class SayAnythingHelper
         string err = null;
         try
         {
-            bool hadText = false;
-            string saved = null;
-            try { hadText = Clipboard.ContainsText(); }
-            catch (Exception) { hadText = false; }
-            if (hadText)
-            {
-                try { saved = Clipboard.GetText(); }
-                catch (Exception) { saved = null; hadText = false; }
-            }
+            // Snapshot every copyable format (text, HTML, RTF, images, files...)
+            // so the user's clipboard comes back intact after the paste (WS-3).
+            ClipSnapshot saved = SnapshotClipboard();
 
-            if (!TrySetClipboardText(text))
+            // The swap is an implementation detail, never a user "copy": keep the
+            // dictated text out of clipboard history / cloud sync (WS-2).
+            if (!TrySetClipboardText(text, true))
             {
                 err = "could not set clipboard";
             }
@@ -729,7 +772,7 @@ static class SayAnythingHelper
                 uint sent = SendCtrlV();
                 if (sent == 0) err = "SendInput failed";
                 Thread.Sleep(restoreMs);
-                if (hadText) TrySetClipboardText(saved); // best-effort restore
+                RestoreClipboard(saved); // best-effort
             }
         }
         catch (Exception ex)
@@ -744,39 +787,9 @@ static class SayAnythingHelper
         string err = null;
         try
         {
-            bool hadText = false;
-            string saved = null;
-            try { hadText = Clipboard.ContainsText(); }
-            catch (Exception) { hadText = false; }
+            ClipSnapshot saved = SnapshotClipboard();
 
-            if (hadText)
-            {
-                try { saved = Clipboard.GetText(); }
-                catch (Exception) { saved = null; hadText = false; }
-            }
-            else
-            {
-                bool nonText = false;
-                try
-                {
-                    IDataObject d = Clipboard.GetDataObject();
-                    if (d != null)
-                    {
-                        string[] fmts = d.GetFormats();
-                        if (fmts != null && fmts.Length > 0) nonText = true;
-                    }
-                }
-                catch (Exception) { }
-                if (nonText && !_warnedNonText)
-                {
-                    _warnedNonText = true;
-                    // Non-text clipboard content is not saved/restored; our
-                    // pasted text is left on the clipboard afterwards.
-                    EmitLog("clipboard held non-text content; leaving pasted text on the clipboard");
-                }
-            }
-
-            if (!TrySetClipboardText(text))
+            if (!TrySetClipboardText(text, true))
             {
                 err = "could not set clipboard";
             }
@@ -785,10 +798,7 @@ static class SayAnythingHelper
                 uint sent = SendCtrlV();
                 if (sent == 0) err = "SendInput failed";
                 Thread.Sleep(restoreMs);
-                if (hadText)
-                {
-                    TrySetClipboardText(saved); // best-effort restore
-                }
+                RestoreClipboard(saved); // best-effort
             }
         }
         catch (Exception ex)
@@ -796,6 +806,133 @@ static class SayAnythingHelper
             err = ex.Message;
         }
         EmitResult("pasted", err);
+    }
+
+    // ---- Clipboard: history opt-out + full-format snapshot (WS-2, WS-3) ---
+
+    // Registered clipboard formats documented by Microsoft for apps that place
+    // sensitive or transient data on the clipboard:
+    //  - ExcludeClipboardContentFromMonitorProcessing: any data; clipboard
+    //    monitors (history, sync, third-party managers that honour it) skip it.
+    //  - CanIncludeInClipboardHistory: DWORD 0 = keep out of Win+V history.
+    //  - CanUploadToCloudClipboard: DWORD 0 = do not sync to other devices.
+    const string FMT_EXCLUDE_MONITOR = "ExcludeClipboardContentFromMonitorProcessing";
+    const string FMT_CAN_HISTORY = "CanIncludeInClipboardHistory";
+    const string FMT_CAN_CLOUD = "CanUploadToCloudClipboard";
+
+    // Bound the snapshot so a huge or slow (delayed-render) clipboard can never
+    // stall dictation: stop collecting after this much time or data. Formats not
+    // collected are not restored (logged once).
+    const int SNAPSHOT_BUDGET_MS = 750;
+    const long SNAPSHOT_BUDGET_BYTES = 64L * 1024 * 1024;
+    static bool _warnedSnapshotPartial = false;
+
+    class ClipSnapshot
+    {
+        public bool wasEmpty;      // clipboard had no formats at all
+        public DataObject data;    // managed copy of every collected format, or null
+    }
+
+    static void AddHistoryOptOut(DataObject d)
+    {
+        d.SetData(FMT_EXCLUDE_MONITOR, false, new MemoryStream(new byte[] { 0, 0, 0, 0 }));
+        d.SetData(FMT_CAN_HISTORY, false, new MemoryStream(BitConverter.GetBytes((int)0)));
+        d.SetData(FMT_CAN_CLOUD, false, new MemoryStream(BitConverter.GetBytes((int)0)));
+    }
+
+    static bool IsOptOutFormat(string f)
+    {
+        return f == FMT_EXCLUDE_MONITOR || f == FMT_CAN_HISTORY || f == FMT_CAN_CLOUD;
+    }
+
+    // Copy every format we can read into managed memory. GetData returns managed
+    // copies (string, MemoryStream, string[], Bitmap), so the snapshot survives the
+    // clipboard being replaced. Formats that cannot be read are skipped.
+    static ClipSnapshot SnapshotClipboard()
+    {
+        ClipSnapshot snap = new ClipSnapshot();
+        IDataObject src = null;
+        string[] fmts = null;
+        try { src = Clipboard.GetDataObject(); } catch (Exception) { src = null; }
+        if (src != null)
+        {
+            try { fmts = src.GetFormats(false); } catch (Exception) { fmts = null; }
+        }
+        if (fmts == null || fmts.Length == 0)
+        {
+            snap.wasEmpty = (src != null);
+            return snap;
+        }
+
+        DataObject copy = new DataObject();
+        int kept = 0;
+        bool partial = false;
+        long bytes = 0;
+        DateTime deadline = DateTime.UtcNow.AddMilliseconds(SNAPSHOT_BUDGET_MS);
+
+        // Plain text first, so it survives even when the budget runs out.
+        List<string> order = new List<string>();
+        for (int i = 0; i < fmts.Length; i++)
+        {
+            if (fmts[i] == DataFormats.UnicodeText) order.Insert(0, fmts[i]);
+            else order.Add(fmts[i]);
+        }
+
+        for (int i = 0; i < order.Count; i++)
+        {
+            string f = order[i];
+            if (IsOptOutFormat(f)) continue; // re-added on restore
+            if (DateTime.UtcNow > deadline) { partial = true; break; }
+            object o = null;
+            try { o = src.GetData(f, false); } catch (Exception) { o = null; }
+            if (o == null) continue;
+            MemoryStream ms = o as MemoryStream;
+            if (ms != null)
+            {
+                if (bytes + ms.Length > SNAPSHOT_BUDGET_BYTES) { partial = true; continue; }
+                bytes += ms.Length;
+            }
+            string str = o as string;
+            if (str != null) bytes += (long)str.Length * 2;
+            try { copy.SetData(f, false, o); kept++; } catch (Exception) { }
+        }
+
+        if (partial && !_warnedSnapshotPartial)
+        {
+            _warnedSnapshotPartial = true;
+            EmitLog("clipboard was too large or slow to snapshot fully; some formats may not be restored");
+        }
+        if (kept == 0)
+        {
+            // Formats exist but none were readable (e.g. only metafiles). Nothing
+            // we can restore; leave the clipboard as-is after the paste.
+            EmitLog("clipboard content could not be read for restore; it will not be restored");
+            return snap;
+        }
+        snap.data = copy;
+        return snap;
+    }
+
+    static void RestoreClipboard(ClipSnapshot snap)
+    {
+        if (snap == null) return;
+        if (snap.data != null)
+        {
+            // Re-placing the user's own content is not a new copy: opt it out so
+            // history does not get a duplicate entry and nothing re-syncs.
+            try { AddHistoryOptOut(snap.data); } catch (Exception) { }
+            for (int i = 0; i < 6; i++)
+            {
+                try { Clipboard.SetDataObject(snap.data, true); return; }
+                catch (Exception) { Thread.Sleep(15); }
+            }
+            return;
+        }
+        if (snap.wasEmpty)
+        {
+            // The clipboard was empty before: leave it empty, not holding dictation.
+            TrySetClipboardText("", false);
+        }
     }
 
     static void DoType(string text)
@@ -814,14 +951,27 @@ static class SayAnythingHelper
         EmitResult("typed", err);
     }
 
-    static bool TrySetClipboardText(string s)
+    static bool TrySetClipboardText(string s, bool noHistory)
     {
         for (int i = 0; i < 6; i++)
         {
             try
             {
-                if (string.IsNullOrEmpty(s)) Clipboard.Clear();
-                else Clipboard.SetText(s);
+                if (string.IsNullOrEmpty(s))
+                {
+                    Clipboard.Clear();
+                }
+                else if (noHistory)
+                {
+                    DataObject d = new DataObject();
+                    d.SetData(DataFormats.UnicodeText, false, s);
+                    AddHistoryOptOut(d);
+                    Clipboard.SetDataObject(d, true);
+                }
+                else
+                {
+                    Clipboard.SetText(s);
+                }
                 return true;
             }
             catch (Exception)

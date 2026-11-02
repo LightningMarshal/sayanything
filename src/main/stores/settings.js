@@ -52,7 +52,9 @@ const DEFAULTS = {
   padHotkey: IS_MAC
     ? { vk: 165, name: 'Right Option', mods: [] }
     : { vk: 165, name: 'Right Alt', mods: [] },
-  pad: { enabled: true },
+  // excludeFromClipboardHistory: the pad's auto-copy is marked so Windows
+  // clipboard history / cloud clipboard and macOS clipboard managers skip it.
+  pad: { enabled: true, excludeFromClipboardHistory: true },
   mic: { deviceId: 'default', warm: true, preRollMs: 800 },
   model: 'small.en',
   language: 'en',

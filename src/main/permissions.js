@@ -78,6 +78,7 @@ try { state.mic = micGranted(); } catch (e) { /* stays false */ }
 // change tracking
 // ---------------------------------------------------------------------------
 
+/** @returns {{listen:boolean, ax:boolean, mic:boolean, platform:'darwin'|'win32'}} */
 function snapshot() {
   if (!IS_DARWIN) {
     return { listen: true, ax: true, mic: true, platform: 'win32' };

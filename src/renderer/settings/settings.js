@@ -301,6 +301,7 @@
     var padName = $('padhotkey-name');
     if (padName) padName.textContent = (settings.padHotkey && settings.padHotkey.name) || (IS_MAC ? 'Right Option' : 'Right Alt');
     setChecked('pad-enabled', settings.pad && settings.pad.enabled);
+    setChecked('pad-nohistory', !(settings.pad && settings.pad.excludeFromClipboardHistory === false));
 
     var a = settings.autoStop || {};
     setChecked('autostop-enabled', a.enabled);
@@ -373,6 +374,7 @@
   function wireHotkey() {
     bindToggle('autostop-enabled', function (v) { persist({ autoStop: { enabled: v } }); });
     bindToggle('pad-enabled', function (v) { persist({ pad: { enabled: v } }); });
+    bindToggle('pad-nohistory', function (v) { persist({ pad: { excludeFromClipboardHistory: v } }); });
 
     wireCapture('padhotkey-capture', 'padhotkey-status', 'Press a key or combo for the drop pad…', function (res) {
       var hk = composeHotkey(res);
@@ -431,6 +433,7 @@
   }
 
   function renderModels(list) {
+    lastModelList = list; // kept so a mid-download progress event can rebuild
     var wrap = $('model-list');
     if (!wrap) return;
     if (!list.length) {
@@ -462,7 +465,8 @@
     meta.className = 'model-meta';
     meta.textContent = fmtSize(m.sizeMB)
       + (m.note ? ' · ' + m.note : '')
-      + (m.downloaded ? ' · downloaded' : ' · not downloaded');
+      + (m.downloaded ? ' · downloaded' : ' · not downloaded')
+      + (m.verified === false ? ' · not hash-verified (size-checked only)' : '');
 
     var side = document.createElement('div');
     side.className = 'model-side';
@@ -571,10 +575,8 @@
     }
   }
 
-  // keep the last list so a mid-download progress event can rebuild if needed
+  // the last model list (set by renderModels) so a mid-download progress event can rebuild
   var lastModelList = [];
-  var _renderModels = renderModels;
-  renderModels = function (list) { lastModelList = list; _renderModels(list); };
 
   // -------------------------------------------------------------------------
   // Dictionary
@@ -945,7 +947,7 @@
     var cur = {
       hotkey: { vk: 163, name: 'Right Ctrl' },
       padHotkey: { vk: 165, name: 'Right Alt' },
-      pad: { enabled: true },
+      pad: { enabled: true, excludeFromClipboardHistory: true },
       mic: { deviceId: 'default', warm: true, preRollMs: 800 },
       model: 'small.en', language: 'en',
       format: { fillerRemoval: true, voiceCommands: true, trailingSpace: true, autoCapitalize: true, artifactStrip: true },

@@ -460,7 +460,7 @@ function reason(e) {
  *   and the caller injects the original formatted text.
  */
 async function rewrite(text, opts) {
-  opts = opts || {};
+  opts = opts || /** @type {typeof opts} */ ({});
   if (typeof text !== 'string' || !text.trim()) return { text: null, reason: 'empty-input' };
   if (!opts.model) return { text: null, reason: 'no-model' };
 

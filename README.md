@@ -57,7 +57,7 @@ Not sure which box has focus? Don't want it typing into the wrong window? Hold *
 - **Warm mic.** Keeps a tiny rolling buffer so if you start talking a beat before you hit the key, your first word still makes it.
 - **Smart formatting.** Punctuation, filler removal (um, uh), spoken commands (say "new line" or "new paragraph"), auto-caps, and it strips the junk Whisper sometimes emits. All toggleable.
 - **Custom dictionary.** Feed it names and jargon so it stops mangling them.
-- **Local history (opt-in).** Off by default. Turn it on in Settings and it keeps your last 200 transcriptions, click to copy, as a local (unencrypted) JSON file.
+- **Local history (opt-in).** Off by default. Turn it on in Settings and it keeps your last 200 transcriptions, click to copy. The file is encrypted with your OS account's keystore (Windows DPAPI, macOS Keychain), so other accounts, backups and synced folders can't read it.
 - **Private because of how it's built,** not because of a checkbox. Audio stays in memory, Whisper runs on `127.0.0.1` only, zero network calls at runtime.
 
 ## Say Anything vs Wispr Flow
@@ -156,13 +156,13 @@ Full spec is in [`docs/SPEC.md`](docs/SPEC.md), module layout in [`docs/CONTRACT
 
 Privacy here isn't a setting, it's how the thing is built.
 
-- **The keyboard hook only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing.
+- **The keyboard hook only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing. One bit is the exception: if you press some other key while holding the hotkey (Ctrl+Arrow, or AltGr+Q to type @), the hook says "another key was pressed" so that shortcut doesn't start a dictation. It never says which key.
 - **Audio only lives in memory** and never hits disk. The WAV exists just long enough to POST to the local server.
 - **Whisper binds `127.0.0.1` only.** With AI rewrite off (the default), there are zero network calls at runtime, period.
 - **The optional rewrite only talks to localhost.** If (and only if) you turn it on, it POSTs to a local model server (Ollama on `127.0.0.1:11434` by default). The endpoint is configurable, but any non-loopback address is refused in code. No cloud, ever.
 - **The only times it uses the internet** are when setup grabs models and binaries (GitHub and Hugging Face, announced on the console) and when you download a model yourself from the **Model** tab. Nothing else.
-- **Download integrity, honestly.** The Windows whisper binary zip and the default `small.en` model are checked against pinned SHA-256 digests. The other models in the catalog are size-checked but not yet hash-pinned (that's being fixed). On Mac, whisper is built from the `v1.9.1` source tag.
-- **Clipboard caveat.** Pasting works by briefly putting your text on the clipboard, then restoring what was there. Today that means clipboard history (Win+V), cloud clipboard sync, and clipboard-manager apps can record each dictation. Keeping dictations out of those is in progress. If that matters to you, turn off clipboard history while dictating sensitive text.
+- **Download integrity, honestly.** The Windows whisper binary zip and the default `small.en` model are checked against pinned SHA-256 digests. The other models in the catalog are size-checked only for now, and the Model tab labels them "not hash-verified" until their digests are pinned (`scripts/pin-model-hashes.js`). On Mac, whisper is built from the `v1.9.1` tag and the build refuses to run unless that tag still points at the pinned commit `f049fff9`.
+- **Dictations stay out of clipboard history.** Pasting works by briefly putting your text on the clipboard, then putting back whatever you had there (text, formatting, images and files). That temporary entry is marked so Windows clipboard history (Win+V) and cloud clipboard sync skip it, and on Mac it's marked concealed and transient, which most clipboard managers respect. Drop-pad copies get the same treatment unless you turn off **Keep drop-pad text out of clipboard history**. Limits: third-party clipboard managers can ignore these markers, and a very large or slow clipboard (over 64 MB or 0.75 s to read) may not come back in full.
 - **The helper is compiled on your machine** from source that's checked in (`csc.exe` on Windows, `swiftc` on Mac). The binary is never downloaded.
 
 ## Troubleshooting and FAQ
@@ -184,6 +184,12 @@ Privacy here isn't a setting, it's how the thing is built.
 **It never stops in a loud room.** Constant background noise can keep the level above the quiet threshold so it never hears the pause. Just tap the key again to finish it yourself (and there's a max-length backstop for really long ones).
 
 **Rewrite tab says "Ollama not detected."** The optional AI cleanup needs [Ollama](https://ollama.com) running. Install it, start it, pull a model (`ollama pull llama3.2`), then hit **Refresh**. It's off by default so this only matters if you want it, and if Ollama's ever unreachable you just get your plain text.
+
+**It pasted my OLD clipboard instead of what I said (Remote Desktop, Citrix, VMs, slow apps).** Text goes in by a quick clipboard swap: your words go on the clipboard, Ctrl+V is sent, and 300 ms later your previous clipboard is put back. A slow target can read the clipboard after it was restored. Quit Say Anything, raise `"restoreClipboardMs"` under `"inject"` in `settings.json` (`%APPDATA%\SayAnything` on Windows, `~/Library/Application Support/SayAnything` on Mac) to 800-1500, and start it again. Or set `"mode": "type"` there to type the text instead of pasting it.
+
+**It doesn't work in an app running as administrator.** Windows blocks a normal app from sending keystrokes to an elevated (admin) window. Say Anything doesn't run elevated, on purpose. Dictate into the elevated app's window from the drop pad and paste with Ctrl+V yourself. (Not yet verified on hardware, see `docs/MANUAL-TESTS.md`.)
+
+**I use Right Ctrl / AltGr in shortcuts.** Shortcuts like Right Ctrl + Arrow or AltGr + Q (for @) don't start a dictation: if another key goes down while the hotkey is held, the press is treated as a shortcut and dropped.
 
 **Nothing happens when I hold the key.** Check the tray menu isn't **Paused**, confirm your hotkey in Settings → Hotkey, and make sure the helper's running (Settings → About → Input helper). If it keeps crashing, restarting the app reinstalls the hook.
 

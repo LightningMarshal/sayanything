@@ -98,7 +98,7 @@ function buildWav(pcmBuffers) {
   header.write('data', 36, 'ascii');
   header.writeUInt32LE(dataSize, 40);          // Subchunk2Size
 
-  return Buffer.concat([header].concat(pcmBuffers), 44 + dataSize);
+  return Buffer.concat([/** @type {Buffer} */ (header)].concat(pcmBuffers), 44 + dataSize);
 }
 
 /**
@@ -106,7 +106,7 @@ function buildWav(pcmBuffers) {
  * @param {{sessionId:number, deviceId?:string, preRollMs?:number, warm?:boolean, chime?:boolean}} opts
  */
 function begin(opts) {
-  opts = opts || {};
+  opts = opts || /** @type {typeof opts} */ ({});
   const sessionId = opts.sessionId;
   if (sessionId == null) { log.error('audio-session.begin: missing sessionId'); return; }
 

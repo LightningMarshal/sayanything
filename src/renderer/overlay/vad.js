@@ -125,7 +125,7 @@
         floor = floor + (r - floor) * cfg.floorRise;
       }
 
-      var speaking = false;
+      var speaking;
       if (r > speechThresh) {
         // confirmed speech energy
         aboveMs += dt;
@@ -171,6 +171,7 @@
 
   var api = { createVad: createVad, DEFAULTS: DEFAULTS };
 
+  /* global module -- CommonJS export for the plain-node test (test/vad-test.js) */
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  if (root) root.SayAnythingVad = api;
+  if (root) /** @type {any} */ (root).SayAnythingVad = api;
 })(typeof self !== 'undefined' ? self : (typeof window !== 'undefined' ? window : this));

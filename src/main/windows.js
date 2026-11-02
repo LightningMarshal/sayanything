@@ -78,10 +78,6 @@ function hookScreenEvents() {
   }
 }
 
-/**
- * Create (once) the always-present overlay window, hidden.
- * @returns {import('electron').BrowserWindow}
- */
 // Renderers only ever load their own local file: URL. Prevent any navigation
 // away from it and deny window.open, so injected/mis-typed content can never
 // steer a renderer to a remote origin. Defense-in-depth atop the page CSPs.
@@ -93,6 +89,10 @@ function lockNavigation(win) {
   } catch (e) { /* older electron: best-effort */ }
 }
 
+/**
+ * Create (once) the always-present overlay window, hidden.
+ * @returns {import('electron').BrowserWindow}
+ */
 function createOverlay() {
   if (overlayWin && !overlayWin.isDestroyed()) return overlayWin;
 

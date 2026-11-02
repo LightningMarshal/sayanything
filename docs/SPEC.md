@@ -38,7 +38,9 @@ Audio capture happens in the (hidden-capable) overlay renderer: `getUserMedia` �
 `idle → recording → transcribing → injecting → idle`, with:
 - hotkey **down** (idle): start session — overlay `listening`, `audio:start`, note t0.
 - hotkey **up**: if held < 250 ms → latch (stay recording); else finalize.
-- hotkey **down** (latched recording): finalize. hotkey **down** (transcribing): start a *new* overlapping session (transcriptions queue FIFO; injections happen in session-start order).
+- hotkey **down** (latched recording): mark stopping; finalize on that key's **up** (if a `chord` arrives first, it was a shortcut such as Ctrl+C, so the session stays latched).
+- `chord` while the hotkey is still held for a new session (WS-5): the press was a keyboard shortcut (Ctrl+Arrow, AltGr+Q); discard the session silently (mic aborted, pill hidden, nothing inserted).
+- hotkey **down** (transcribing): start a *new* overlapping session (transcriptions queue FIFO; injections happen in session-start order).
 - **Esc** (recording): cancel — `audio:abort`, overlay `cancelled`, nothing inserted. Esc is only watched while recording.
 - Auto-finalize at `maxUtteranceSec` (default 300).
 - Finalize: `audio:stop` → WAV from buffered chunks → transcribe (with dictionary prompt, temperature 0) → format → if empty: overlay `nothing-heard`, stop → else helper `paste` (or `type` per settings) → history add → overlay `success` flash.
@@ -58,12 +60,12 @@ Order: strip whisper artifacts (`[BLANK_AUDIO]`, `[Music]`, `(silence)`, `[inaud
 
 ### Privacy & security rules (hard requirements)
 
-- The keyboard hook must **only ever emit watched VKs** (the configured hotkey; Esc only while recording; plus a one-shot "capture next key" mode for rebinding). It must never buffer, log, or transmit any other keystroke. No keystroke contents in logs.
+- The keyboard hook must **only ever emit watched VKs** (the configured hotkey; Esc only while recording; plus a one-shot "capture next key" mode for rebinding). It must never buffer, log, or transmit any other keystroke. The single exception is a field-less `chord` event: at most once per hotkey hold, it says that *some* other key went down while a watched key was held, with no key identity, count or code, so a shortcut like Ctrl+Arrow or AltGr+Q is not mistaken for dictation. No keystroke contents in logs.
 - Injected input (`LLKHF_INJECTED`) must be ignored by the hook (prevents feedback from our own Ctrl+V/typing).
 - Clipboard restore after paste (default 300 ms); best-effort restore of text-format clipboard content; if the clipboard held a non-text format, skip the swap and warn once (still paste, then leave our text — document this).
 - Audio: pre-roll ring buffer lives only in renderer memory, is discarded unless a session starts, and audio is never written to disk (WAV exists only as an in-memory buffer for the POST). whisper-server binds 127.0.0.1 only.
 - No network calls at runtime except localhost whisper; the only internet access is `scripts/setup.js`/model downloads (GitHub + Hugging Face) and it must say so on the console.
-- **Runtime-network exception (v0.2 AI rewrite):** when — and only when — the user has enabled AI rewrite, Say Anything may make localhost requests to a local Ollama daemon at `http://127.0.0.1:11434` (`GET /api/tags` to list installed models, `POST /api/chat` to rewrite the transcript). The host is a hard-coded constant (`127.0.0.1:11434`); there is no setting, env var, or code path that can point it at any other machine. Nothing is sent when rewrite is disabled. This is still fully on-device — no data leaves the machine.
+- **Runtime-network exception (v0.2 AI rewrite):** when — and only when — the user has enabled AI rewrite, Say Anything may make loopback requests to a local model server: Ollama at `http://127.0.0.1:11434` by default (`GET /api/tags`, `POST /api/chat`), or an OpenAI-compatible server (`GET /v1/models`, `POST /v1/chat/completions`) at the configured `rewrite.endpoint`. The endpoint is a setting, but `normalizeEndpoint()` (rewrite.js) and the settings store both refuse any host that is not loopback (`localhost`, `127.0.0.0/8`, `::1`), and every request uses `redirect:'error'`, so no setting, hand-edited file or redirect can send a transcript to another machine. Nothing is sent when rewrite is disabled. This is still fully on-device — no data leaves the machine.
 - Helper compile source is checked into the repo (auditable); the exe is never downloaded.
 
 ### Error handling & resilience

@@ -33,7 +33,10 @@
     "prep": "node scripts/stage-bundle.js",
     "dist:dir": "npm run prep && electron-builder --dir",
     "dist": "npm run prep && electron-builder",
-    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js",
+    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js && node test/state-test.js && node test/hashes-test.js && node test/docs-drift-test.js && node test/boot-modules-test.js && node test/history-test.js",
+    "lint": "eslint .",
+    "typecheck": "tsc -p .",
+    "check": "npm run lint && npm run typecheck && npm test",
     "test:electron": "electron test/overlay-css-check.js && electron test/settings-models-check.js && electron test/welcome-perms-check.js",
     "test:e2e": "test/e2e-transcribe.sh",
     "test:e2e:partial": "test/partial-transcribe.sh"
@@ -47,9 +50,13 @@
     "files": [
       "src/**/*",
       "assets/**/*",
+      "!assets/demo.gif",
+      "!assets/social-preview.png",
+      "!assets/screenshots/**",
       "native/**/*",
-      "docs/**/*",
-      "package.json"
+      "package.json",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
     ],
     "extraResources": [
       {
@@ -75,8 +82,20 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] },
-        { "target": "zip", "arch": ["arm64", "x64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ],
       "icon": "assets/SayAnything.icns",
       "category": "public.app-category.productivity",
@@ -94,7 +113,12 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
     "electron": "^43.1.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "typescript": "5.9.3"
   }
 }

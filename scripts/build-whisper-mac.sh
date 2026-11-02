@@ -34,6 +34,10 @@
 # Env overrides (all optional):
 #   WHISPER_CPP_REPO_URL   git remote to clone (default: upstream ggml-org repo)
 #   WHISPER_CPP_TAG        tag to build (default: v1.9.1)
+#   WHISPER_CPP_COMMIT     commit the tag must resolve to (default: the pinned
+#                           v1.9.1 commit below). Tags can be moved; the commit
+#                           cannot, so the build refuses a tag that resolves
+#                           anywhere else. Override both together when upgrading.
 #   WHISPER_CPP_SRC_DIR    where to clone/reuse the whisper.cpp source tree
 #                           (default: ~/Library/Caches/SayAnything/whisper-build/whisper.cpp)
 #   JOBS                   parallel build jobs (default: hw.ncpu)
@@ -42,6 +46,9 @@ set -euo pipefail
 
 REPO_URL="${WHISPER_CPP_REPO_URL:-https://github.com/ggml-org/whisper.cpp}"
 TAG="${WHISPER_CPP_TAG:-v1.9.1}"
+# Pinned 2026-11-02: `git ls-remote https://github.com/ggml-org/whisper.cpp refs/tags/v1.9.1`
+# -> f049fff95a089aa9969deb009cdd4892b3e74916 ("release : v1.9.1 (#3892)", 2026-06-19).
+PINNED_COMMIT="${WHISPER_CPP_COMMIT:-f049fff95a089aa9969deb009cdd4892b3e74916}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SRC_DIR="${WHISPER_CPP_SRC_DIR:-$HOME/Library/Caches/SayAnything/whisper-build/whisper.cpp}"
@@ -113,7 +120,9 @@ fi
 
 actual_tag="$(git -C "$SRC_DIR" describe --tags --exact-match 2>/dev/null || echo '<none>')"
 [[ "$actual_tag" == "$TAG" ]] || die "checked-out tag is '$actual_tag', expected '$TAG'"
-log "source tree confirmed at tag $actual_tag"
+actual_commit="$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || echo '<none>')"
+[[ "$actual_commit" == "$PINNED_COMMIT" ]] || die "tag $TAG resolves to commit $actual_commit, expected pinned $PINNED_COMMIT (tag moved? refusing to build)"
+log "source tree confirmed at tag $actual_tag, commit $actual_commit (pinned)"
 
 # ---------------------------------------------------------------------------
 # 3. Build each requested arch slice into its own cmake build dir

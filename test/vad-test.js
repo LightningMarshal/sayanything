@@ -14,7 +14,6 @@
  * never during the mid-sentence pause, and never before the first speech.
  */
 
-const assert = require('assert');
 const vadLib = require('../src/renderer/overlay/vad');
 
 let passed = 0;
