@@ -23,7 +23,8 @@ catch (e) { process.stderr.write('gen-social: run `npm install` first.\n'); proc
 
 if (typeof electron === 'string') {
   const { spawn } = require('child_process');
-  const child = spawn(electron, [__filename], { stdio: 'inherit' });
+  // Pass extra args through (e.g. --no-sandbox when running as root / in CI).
+  const child = spawn(electron, [__filename].concat(process.argv.slice(2)), { stdio: 'inherit' });
   child.on('exit', function (c) { process.exit(c == null ? 0 : c); });
   child.on('error', function (e) { process.stderr.write('gen-social: ' + e.message + '\n'); process.exit(1); });
 } else {
