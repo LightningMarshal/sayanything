@@ -27,7 +27,7 @@ Electron shell (main = CommonJS, renderers = vanilla HTML/CSS/JS, **no bundler, 
    - Low-level keyboard hook (`WH_KEYBOARD_LL`) that reports **only the watched VKs** (hotkey + Esc) — see privacy rules below.
    - Text injection: clipboard-swap paste (save clipboard → set text → SendInput Ctrl+V → restore after delay) and a fallback "type" mode (SendInput `KEYEVENTF_UNICODE`).
    - Foreground-window info (exe name, title) on request.
-2. **whisper-server.exe** — from the whisper.cpp v1.9.1 release (`whisper-bin-x64.zip`, cached at `third_party/whisper-bin-x64-v1.9.1.zip`, else downloaded from GitHub). Started at app boot on `127.0.0.1:8737` with the selected ggml model; kept warm; restarted with backoff on crash. Transcription = POST WAV to `/inference`.
+2. **whisper-server.exe** — from the whisper.cpp v1.9.1 release (`whisper-bin-x64.zip`, cached at `third_party/whisper-bin-x64-v1.9.1.zip`, else downloaded from GitHub). Started at app boot on `127.0.0.1:8737` with the selected ggml model; kept warm; restarted with backoff on crash. Transcription = POST WAV to `/inference` under a random per-launch `--request-path` (WS-13).
 
 Audio capture happens in the (hidden-capable) overlay renderer: `getUserMedia` → AudioWorklet → downsample to 16 kHz mono PCM16 → chunks over IPC to main → WAV assembly → whisper client → formatter → helper paste → history. Models (ggml, from `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-<name>.bin`) download to `%APPDATA%/SayAnything/models` with progress UI. Default model: **small.en** (466 MB); catalog: tiny.en, base.en, small.en, medium.en, large-v3-turbo, plus multilingual tiny/base/small/medium for non-English. Threads for whisper: `max(4, cpuCount - 2)`.
 

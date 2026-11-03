@@ -112,6 +112,7 @@ function Invoke-Inference([int]$p, [byte[]]$wavBytes) {
 $startedServer = $null
 if (Test-Port $Port) {
   Write-Host ('Using already-running whisper-server on port {0}' -f $Port)
+  Write-Host '  Note: if that is the running Say Anything app, its server only answers on a secret per-launch path, so this test will get HTTP 404. Quit the app or pass a different -Port.'
 } else {
   if (-not (Test-Path $binServer)) { Write-Host ('SKIP: whisper-server.exe not found at {0}' -f $binServer); exit 0 }
   $threads = [Math]::Max(4, [Environment]::ProcessorCount - 2)

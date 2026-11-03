@@ -100,10 +100,17 @@ desktop, see `docs/MANUAL-TESTS.md`.
 | WS-10 | History privacy | Off by default, encrypted at rest, fail closed |
 | WS-11 | Boot fails silently | Required modules now fatal with a dialog |
 | WS-12 | Distribution and trust (signing, releases, fuses) | Electron fuses on packaged builds (verified in CI on the built .exe); Windows packaging job in CI; draft-release workflow with SHA256SUMS + provenance attestation (PR #11). Code signing deferred by the owner until every category is above 9 |
-| WS-13 | Unfinished code review | In progress. Done: renderer CSP without 'unsafe-inline', no dynamic innerHTML, preload allowlists == IPC handlers (tested), mic-only permissions (tested), helper JSON parser fuzzed (stack-overflow fixed). Electron fuses done (PR #10). Remaining: Swift helper read-through, whisper server/client review, network egress test (WS-14, needs hardware) |
+| WS-13 | Unfinished code review | Code read-through done. Done: renderer CSP without 'unsafe-inline', no dynamic innerHTML, preload allowlists == IPC handlers (tested), mic-only permissions (tested), helper JSON parser fuzzed (stack-overflow fixed), Electron fuses (PR #10). whisper-server/client/streaming reviewed: server routes now sit behind a random per-launch `--request-path` because upstream v1.9.1 has no auth, sends `Access-Control-Allow-Origin: *` and exposes `POST /load <any path>` (tested with a fake server). Swift helper reviewed: macOS clipboard restore now re-marks content as concealed (Windows already did). Remaining: network egress test (WS-14, needs hardware); see 'WS-13 follow-ups' below |
 | WS-14 | Empirical "100% local" egress test | Not started (needs hardware) |
 | WS-15 | Product ideas | Owner's call |
 | Linux | Port | Plan in `docs/LINUX-PORT.md` revised: Wayland portals first (SteamOS KDE + Ubuntu GNOME), Flatpak; L3-L4 open |
+
+## WS-13 follow-ups (low priority, not done)
+
+- **Clipboard restore can clobber a copy made mid-paste.** Both helpers restore the saved clipboard `restoreMs` after pasting without checking whether the user copied something in between. A `changeCount` (mac) / `GetClipboardSequenceNumber` (Windows) guard would fix it, but some clipboard managers rewrite the clipboard themselves, so it needs testing on real machines first.
+- **Password-manager auto-clear.** Restoring the clipboard counts as a new change, so password managers that clear the clipboard after N seconds may see "the user copied something else" and skip clearing. Inherent to clipboard-swap paste; WS-9 (insert without the clipboard) is the real fix.
+- **The secret is visible in the process list.** `--request-path` is a command-line argument, so other local accounts can read it on Linux (`ps`), and same-user software can on every OS. It is meant to keep browsers and remote origins out, not other local software.
+- **Port reuse on Windows/macOS.** cpp-httplib sets `SO_REUSEADDR` (Windows) / `SO_REUSEPORT` (macOS, Linux) on its listening socket. A same-user process could bind the same port, but same-user code can already read the app's data, so this adds no new exposure.
 
 ## Roadmap / open items
 

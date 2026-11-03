@@ -82,6 +82,7 @@ echo "Model: $MODEL"
 STARTED_PID=""
 if test_port "$PORT"; then
   echo "Using already-running whisper-server on port $PORT"
+  echo "  Note: if that is the running Say Anything app, its server only answers on a secret per-launch path, so this test will get HTTP 404. Quit the app or pass a different --port."
 else
   if [[ ! -x "$BIN_SERVER" ]]; then
     echo "SKIP: whisper-server not found (or not executable) at $BIN_SERVER"

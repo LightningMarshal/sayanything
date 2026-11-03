@@ -44,10 +44,9 @@ async function _doTranscribe(wavBuffer, opts) {
   if (!wavBuffer || typeof wavBuffer.length !== 'number' || wavBuffer.length === 0) {
     throw new Error('transcribe: empty WAV buffer');
   }
-  const st = server.status();
-  if (!st.running || !st.port) throw new Error('whisper server is not running');
-
-  const url = 'http://127.0.0.1:' + st.port + '/inference';
+  // endpoint() includes the per-launch request-path secret (see server.js).
+  const url = server.endpoint('/inference');
+  if (!url) throw new Error('whisper server is not running');
   const form = new FormData();
   form.append('file', new Blob([/** @type {Uint8Array<ArrayBuffer>} */ (wavBuffer)], { type: 'audio/wav' }), 'audio.wav');
   form.append('response_format', 'json');
@@ -98,10 +97,9 @@ async function transcribePartial(wavBuffer, opts) {
   if (!wavBuffer || typeof wavBuffer.length !== 'number' || wavBuffer.length === 0) {
     throw new Error('transcribePartial: empty WAV buffer');
   }
-  const st = server.status();
-  if (!st.running || !st.port) throw new Error('whisper server is not running');
-
-  const url = 'http://127.0.0.1:' + st.port + '/inference';
+  // endpoint() includes the per-launch request-path secret (see server.js).
+  const url = server.endpoint('/inference');
+  if (!url) throw new Error('whisper server is not running');
   const form = new FormData();
   form.append('file', new Blob([/** @type {Uint8Array<ArrayBuffer>} */ (wavBuffer)], { type: 'audio/wav' }), 'audio.wav');
   form.append('response_format', 'json');
