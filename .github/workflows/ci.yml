@@ -88,14 +88,14 @@ jobs:
       - name: Install dev dependencies
         run: npm ci
       - name: Cache the whisper.cpp source and build tree
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/SayAnything/whisper-build
           key: whisper-linux-v1.9.1-${{ hashFiles('scripts/build-whisper-linux.sh') }}
       - name: Build whisper-server (static, CPU, x86-64-v3)
         run: scripts/build-whisper-linux.sh
       - name: Cache the tiny.en test model
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/sa-e2e
           key: model-tiny.en-921e4cf8686fdd99

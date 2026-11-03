@@ -83,7 +83,9 @@ async function main() {
     const out = await client.transcribe(fs.readFileSync(WAV), { language: 'en' });
     const text = String(out && out.text || '');
     console.log('  transcript (' + out.ms + ' ms): ' + text.trim());
-    check(/ask not what your country can do for you/i.test(text), 'transcript matches the JFK sample');
+    // whisper breaks its output into segments on separate lines, so compare
+    // with whitespace collapsed.
+    check(/ask not what your country can do for you/i.test(text.replace(/\s+/g, ' ')), 'transcript matches the JFK sample');
 
     const base = 'http://127.0.0.1:' + st.port;
     check(await statusOf(server.endpoint('/health')) === 200, '<secret>/health answers 200');
