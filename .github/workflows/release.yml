@@ -1,0 +1,74 @@
+name: Release (draft)
+
+# Builds the Windows installer and portable zip, verifies the packaged app
+# (fuses, RunAsNode, smoke test with the bundled model), writes SHA256SUMS.txt,
+# attaches a build-provenance attestation, and creates a DRAFT GitHub release.
+# Nothing is published until the owner reviews the draft and clicks Publish.
+# Builds are unsigned until code signing is set up (deferred by the owner).
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to create the draft for (e.g. v0.3.0). Must match package.json version.'
+        required: true
+
+permissions:
+  contents: write        # create the draft release
+  id-token: write        # build-provenance attestation
+  attestations: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Tag matches package.json version
+        shell: bash
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$TAG" ]; then echo "tag $TAG does not match package.json version $v"; exit 1; fi
+      - name: Install dependencies
+        run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Compile native helper (Windows csc.exe)
+        shell: cmd
+        run: native\build.cmd
+      - name: Setup (pinned whisper.cpp zip and default model)
+        run: node scripts/setup.js
+      - name: Build installer and unpacked app
+        run: npm run dist -- --publish never
+      - name: Verify the packaged app
+        run: node scripts/check-packaged-app.js "dist/win-unpacked/Say Anything.exe"
+      - name: Portable zip and checksums
+        shell: pwsh
+        run: |
+          $ver = (node -p "require('./package.json').version")
+          Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/SayAnything-$ver-win-x64-portable.zip"
+          $files = Get-ChildItem dist -File | Where-Object { $_.Name -match '\.(exe|zip)$' }
+          $lines = foreach ($f in $files) { "{0}  {1}" -f (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower(), $f.Name }
+          $lines | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          Get-Content dist/SHA256SUMS.txt
+      - name: Build provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.exe
+            dist/*.zip
+      - name: Create draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" --draft --target "${{ github.sha }}" --title "Say Anything $TAG" \
+            --notes "Unsigned build: Windows SmartScreen will say 'unknown publisher' (More info -> Run anyway). Verify the download against SHA256SUMS.txt, and check provenance with: gh attestation verify <file> -R ${{ github.repository }}" \
+            dist/*.exe dist/*.zip dist/SHA256SUMS.txt
