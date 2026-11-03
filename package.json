@@ -14,6 +14,7 @@
   },
   "homepage": "https://github.com/LightningMarshal/sayanything#readme",
   "main": "src/main/main.js",
+  "desktopName": "io.github.lightningmarshal.SayAnything.desktop",
   "engines": {
     "node": ">=24"
   },
@@ -110,6 +111,11 @@
     },
     "dmg": {
       "artifactName": "SayAnything-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": "dir",
+      "executableName": "sayanything",
+      "category": "Utility"
     }
   },
   "devDependencies": {
