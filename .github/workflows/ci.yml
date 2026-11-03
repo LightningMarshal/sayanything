@@ -140,7 +140,7 @@ jobs:
           name: linux-unpacked
       - name: Unpack the packaged app
         run: mkdir -p dist && tar -C dist -xzf linux-unpacked.tar.gz
-      - uses: flathub-infra/flatpak-github-actions/flatpak-builder@v6
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: SayAnything.flatpak
           manifest-path: packaging/flatpak/io.github.lightningmarshal.SayAnything.yml
