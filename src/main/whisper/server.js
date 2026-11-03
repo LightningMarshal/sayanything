@@ -17,6 +17,17 @@
  * opens the port — that is treated as a launch failure (reject), not a crash to
  * retry forever.
  *
+ * Request-path secret (WS-13): whisper-server has no auth, sends
+ * `Access-Control-Allow-Origin: *` on every route and never checks the Host
+ * header, so with default routes any web page open in the user's browser could
+ * POST /inference, or POST /load with a local file path (making the server parse
+ * that file as a model, and exit if it isn't one). Every launch therefore passes a
+ * fresh random `--request-path /<32 hex>`, which prefixes ALL routes (/inference,
+ * /load, /health, /). The secret lives only in this process: endpoint() hands
+ * out full URLs to client.js, and status() (which reaches the renderer) never
+ * includes it. This blocks browsers and other remote origins; it is not a
+ * barrier against software already running as the same local user.
+ *
  * Emits: 'status' -> { running, model, port }.
  */
 
@@ -25,6 +36,7 @@ const { spawn } = require('child_process');
 const os = require('os');
 const fs = require('fs');
 const net = require('net');
+const crypto = require('crypto');
 const { DEFAULT_PORT } = require('../config');
 const models = require('./models');
 const binaries = require('./binaries');
@@ -61,18 +73,23 @@ async function findFreePort(start) {
   throw new Error('no free port in range ' + start + '-' + (start + PORT_PROBE_SPAN));
 }
 
-// Is something accepting TCP connections on this port? (readiness probe)
-function portOpen(port) {
-  return new Promise(function (resolve) {
-    const sock = new net.Socket();
-    let done = false;
-    function finish(v) { if (done) return; done = true; try { sock.destroy(); } catch (e) { /* ignore */ } resolve(v); }
-    sock.setTimeout(1500);
-    sock.once('connect', function () { finish(true); });
-    sock.once('timeout', function () { finish(false); });
-    sock.once('error', function () { finish(false); });
-    sock.connect(port, '127.0.0.1');
-  });
+// Readiness probe: does OUR server answer GET <secret>/health with 2xx? The
+// server only binds after the model has loaded, and a different process that
+// happens to hold the port would not know the secret path, so a 2xx here means
+// our child is up and ready.
+async function healthy(baseUrl) {
+  try {
+    const res = await fetch(baseUrl + '/health', { signal: AbortSignal.timeout(1500) });
+    try { await res.arrayBuffer(); } catch (e) { /* drain only */ }
+    return res.ok;
+  } catch (e) {
+    return false; // refused / timed out / not up yet
+  }
+}
+
+// 128-bit unguessable route prefix, fresh per launch.
+function newSecret() {
+  return crypto.randomBytes(16).toString('hex');
 }
 
 class WhisperServer extends EventEmitter {
@@ -81,6 +98,7 @@ class WhisperServer extends EventEmitter {
     this._child = null;
     this._model = null;      // last selected model (kept for UI even when stopped)
     this._port = null;       // actual bound port
+    this._secret = null;     // per-launch request-path secret (never leaves main)
     this._basePort = DEFAULT_PORT;
     this._desiredModel = null;
     this._running = false;   // true once TCP-ready
@@ -130,11 +148,13 @@ class WhisperServer extends EventEmitter {
     }
 
     const freePort = await findFreePort(basePort);
+    const secret = newSecret();
     const args = [
       '-m', modelPath,
       '--host', '127.0.0.1',
       '--port', String(freePort),
       '-t', String(threadCount()),
+      '--request-path', '/' + secret,
     ];
 
     this._exited = false;
@@ -142,6 +162,7 @@ class WhisperServer extends EventEmitter {
     this._stopping = false;
     this._model = modelName;
     this._port = freePort;
+    this._secret = secret;
 
     log.info('whisper start: ' + modelName + ' on 127.0.0.1:' + freePort + ' (' + threadCount() + ' threads)');
     const child = spawn(exe, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -162,7 +183,7 @@ class WhisperServer extends EventEmitter {
     child.on('exit', (code, signal) => this._onExit(code, signal));
 
     try {
-      await this._waitReady(freePort);
+      await this._waitReady('http://127.0.0.1:' + freePort + '/' + secret);
     } catch (e) {
       try { child.kill(); } catch (e2) { /* ignore */ }
       this._child = null;
@@ -177,13 +198,17 @@ class WhisperServer extends EventEmitter {
     return this.status();
   }
 
-  async _waitReady(port) {
+  async _waitReady(baseUrl) {
     const deadline = Date.now() + READY_TIMEOUT_MS;
     while (Date.now() < deadline) {
       if (this._exited) {
         throw new Error('whisper-server exited during startup (code ' + this._exitCode + ') — check the model file and logs');
       }
-      if (await portOpen(port)) return;
+      if (await healthy(baseUrl)) {
+        // The child may have died between the probe and now; don't report ready.
+        if (this._exited) continue;
+        return;
+      }
       await delay(300);
     }
     throw new Error('whisper-server did not become ready within ' + READY_TIMEOUT_MS + 'ms');
@@ -257,6 +282,18 @@ class WhisperServer extends EventEmitter {
       model: this._model || null,
       port: this._running ? this._port : null,
     };
+  }
+
+  /**
+   * Full URL for a server route (e.g. '/inference'), including the per-launch
+   * secret prefix, or null when the server is not running. Main process only:
+   * never send the result to a renderer or write it to the log.
+   * @param {string} route must start with '/'
+   * @returns {string|null}
+   */
+  endpoint(route) {
+    if (!this._running || !this._port || !this._secret) return null;
+    return 'http://127.0.0.1:' + this._port + '/' + this._secret + route;
   }
 
   /**

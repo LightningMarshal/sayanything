@@ -154,7 +154,7 @@ On a Mac the same two commands make a `.dmg` and a `.zip` for both Apple Silicon
 An Electron shell (main is CommonJS, the windows are plain HTML/CSS/JS, no bundler, no framework) plus two small local native bits:
 
 - **The input helper.** One tiny native program per platform, both talking the same JSON-over-stdio protocol. On Windows it's a C# helper compiled at setup by Windows' own `csc.exe` ([`native/SayAnythingHelper.cs`](native/SayAnythingHelper.cs)); on Mac it's a Swift helper built by `swiftc` ([`native/SayAnythingHelper.swift`](native/SayAnythingHelper.swift)). It watches only your hotkey, does the clipboard-swap paste and unicode typing, and reports the frontmost app. You can read every line. It's never downloaded.
-- **whisper-server.** From whisper.cpp v1.9.1, kept warm on `127.0.0.1:8737`. Transcription is a local `POST` to `/inference`. On Mac it's built from source as one universal binary; on Apple Silicon it uses Metal so transcription runs on the GPU, and on Intel it runs on the CPU (Accelerate).
+- **whisper-server.** From whisper.cpp v1.9.1, kept warm on `127.0.0.1:8737`. Transcription is a local `POST` to `/inference`. The server has no login of its own and allows any website origin, so each launch puts all its routes behind a random 128-bit path that only the app knows; a web page open in your browser can't reach it. On Mac it's built from source as one universal binary; on Apple Silicon it uses Metal so transcription runs on the GPU, and on Intel it runs on the CPU (Accelerate).
 
 **Zero runtime npm dependencies.** Downloads use Node's built-in `fetch`, unzipping uses Windows' own `tar.exe`.
 
