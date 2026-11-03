@@ -56,6 +56,26 @@ app.whenReady().then(async function () {
     check(res.models > 0, 'model list renders (' + res.models + ' cards)');
     check(res.history > 0, 'history list renders (' + res.history + ' rows)');
     check(res.chipAdded && res.chipText, 'dictionary: adding a word renders a chip');
+    // Linux layout (demo bridge with ?linux=1): the desktop's bindings, no
+    // capture buttons, the cancel card and the guidance note.
+    await win.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'settings', 'index.html'), { query: { linux: '1' } });
+    await new Promise(function (r) { setTimeout(r, 600); });
+    const lx = await win.webContents.executeJavaScript([
+      '(async function(){',
+      '  document.querySelector(".tab[data-tab=hotkey]").click();',
+      '  await new Promise(function(r){ setTimeout(r, 150); });',
+      '  var t = function(id){ var e = document.getElementById(id); return e ? e.textContent : null; };',
+      '  var h = function(id){ var e = document.getElementById(id); return e ? e.hidden : null; };',
+      '  return { main: t("hotkey-name"), pad: t("padhotkey-name"), cancel: t("cancelhotkey-name"),',
+      '    capHidden: h("hotkey-capture") && h("padhotkey-capture"), cancelCard: h("cancel-card") === false,',
+      '    note: h("hotkey-linux-note") === false && /keyboard shortcut settings/.test(t("hotkey-linux-note")),',
+      '    hint: /cancel shortcut/.test(t("hotkey-hint")) };',
+      '})()',
+    ].join('\n'), true);
+    check(lx.main === 'Ctrl+Meta+Space' && lx.pad === 'Ctrl+Meta+Shift+Space' && lx.cancel === 'Ctrl+Meta+Esc', 'linux: shows the shortcuts the desktop bound');
+    check(lx.capHidden, 'linux: press-to-capture buttons hidden');
+    check(lx.cancelCard && lx.note && lx.hint, 'linux: cancel card, guidance note and cancel hint shown');
+
     await new Promise(function (r) { setTimeout(r, 200); });
     check(errors.length === 0, 'no console errors or uncaught exceptions' + (errors.length ? ' (' + errors[0].slice(0, 160) + ')' : ''));
   } catch (e) {

@@ -350,7 +350,7 @@ function getOnboarding() {
   if (!onboarding) {
     onboarding = require('./onboarding').createOnboarding({
       BrowserWindow: BrowserWindow, app: app, ipc: ipc, settingsStore: settingsStore,
-      helper: helper, windows: windows, permissions: permissions, isDarwin: IS_DARWIN, log: log,
+      helper: helper, windows: windows, permissions: permissions, isDarwin: IS_DARWIN, isLinux: process.platform === 'linux', log: log,
     });
   }
   return onboarding;

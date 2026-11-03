@@ -157,6 +157,13 @@
           case 'history:list': return Promise.resolve(history);
           case 'app:info': return Promise.resolve({ version: '0.1.0', whisper: { running: true, model: cur.model, port: 8737 }, helper: { running: true } });
           case 'hotkey:capture': return Promise.resolve({ vk: 112, name: 'F1' });
+          // Demo of the Linux layout: open the page with ?linux=1.
+          case 'hotkey:linux': return Promise.resolve(/[?&]linux=1\b/.test(location.search)
+            ? { linux: true, bound: [
+              { id: 'dictate', description: 'Dictate', triggerDescription: 'Ctrl+Meta+Space' },
+              { id: 'pad', description: 'Drop pad', triggerDescription: 'Ctrl+Meta+Shift+Space' },
+              { id: 'cancel', description: 'Cancel', triggerDescription: 'Ctrl+Meta+Esc' }] }
+            : { linux: false, bound: [] });
           case 'rewrite:models': return Promise.resolve({ reachable: true, models: ['llama3.2:latest', 'mistral:latest', 'qwen2.5:7b'], host: 'http://127.0.0.1:11434' });
           default: return Promise.resolve(null);
         }

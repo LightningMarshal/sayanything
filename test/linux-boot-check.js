@@ -6,7 +6,8 @@
  * and checks that the Linux path through main.js works end to end:
  *   - settings load from $XDG_CONFIG_HOME/SayAnything
  *   - the 'helper' check passes: the app connected to the bus, created a
- *     GlobalShortcuts session, bound 'dictate' + 'pad', and answers ping
+ *     GlobalShortcuts session, bound 'dictate', 'pad' and 'cancel', and
+ *     answers ping
  *   - the app closes its portal session on exit
  *   - the whisper 'binaries' check fails with the step-4 guidance (no Linux
  *     whisper-server is packaged yet; docs/LINUX-PORT.md)
@@ -66,8 +67,8 @@ async function main() {
       'settings load from $XDG_CONFIG_HOME/SayAnything');
     check(by.helper && by.helper.ok && by.helper.detail && by.helper.detail.ping === true,
       'helper check passes through the portal adapter');
-    check(fake.bound.length === 2 && fake.bound[0].id === 'dictate' && fake.bound[1].id === 'pad',
-      'the app bound dictate + pad through GlobalShortcuts');
+    check(fake.bound.length === 3 && fake.bound.map(function (b) { return b.id; }).join() === 'dictate,pad,cancel',
+      'the app bound dictate + pad + cancel through GlobalShortcuts');
     check(fake.calls.indexOf('Session.Close') !== -1, 'the app closed its portal session on exit');
     check(by.binaries && !by.binaries.ok && /LINUX-PORT\.md, step 4/.test(String(by.binaries.detail)),
       'missing Linux whisper-server reported with the step-4 guidance');

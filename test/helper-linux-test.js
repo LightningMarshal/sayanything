@@ -97,7 +97,9 @@ async function busTests() {
     const readyEv = nextEvent(h, 'ready', 3000);
     await h.start();
     check(await readyEv === true && h.ready === true, 'B) start() resolves and emits ready');
-    check(fake.bound.length === 2 && fake.bound[0].id === 'dictate' && fake.bound[1].id === 'pad', 'B) binds dictate + pad');
+    check(fake.bound.length === 3 && fake.bound[0].id === 'dictate' && fake.bound[1].id === 'pad' && fake.bound[2].id === 'cancel', 'B) binds dictate + pad + cancel');
+    check(fake.bound[2].preferred === DEFAULT_TRIGGER.cancel && DEFAULT_TRIGGER.cancel !== 'Escape', 'B) cancel is a chord, never a bare Esc');
+    check(h.bound.length === 3 && h.bound[2].triggerDescription === DEFAULT_TRIGGER.cancel, 'B) bound shortcuts kept for Settings');
     check(fake.bound[0].preferred === DEFAULT_TRIGGER.main, 'B) bare-modifier hotkey falls back to the default chord');
     check(fake.bound[1].preferred === 'CTRL+ALT+d', 'B) an expressible pad hotkey is offered as-is');
     check(await h.ping() === true, 'B) ping() true once ready');
@@ -114,6 +116,10 @@ async function busTests() {
     fake.activate(session, 'pad');
     got = await ev;
     check(got && got.id === 'pad' && got.down === true, 'B) Activated pad -> shortcut pad down');
+    ev = nextEvent(h, 'shortcut', 2000);
+    fake.activate(session, 'cancel');
+    got = await ev;
+    check(got && got.id === 'cancel' && got.down === true, 'B) Activated cancel -> shortcut cancel down');
 
     // ---- C) paste through RemoteDesktop
     console.log('helper-linux: paste');

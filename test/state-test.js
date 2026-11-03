@@ -489,6 +489,27 @@ scenario('linux shortcut: pad shortcut copies to the pad; ignored when the pad i
   eq(h2.sm._peek().recording, null, 'unknown shortcut id: ignored');
 });
 
+scenario('linux cancel shortcut: cancels a recording, nothing inserted; no-op when idle', async function () {
+  const h = harness();
+  h.helper.emit('shortcut', { id: 'cancel', down: true });
+  eq(h.sm._peek().recording, null, 'cancel when idle: no-op');
+  h.helper.emit('shortcut', { id: 'main', down: true });
+  h.advance(100);
+  h.helper.emit('shortcut', { id: 'main', down: false });   // tap: latched, hands-free
+  h.advance(1500);
+  h.helper.emit('shortcut', { id: 'cancel', down: true });
+  h.helper.emit('shortcut', { id: 'cancel', down: false });
+  await settle();
+  eq(h.pastes(), [], 'cancel: nothing pasted');
+  eq(h.overlay.indexOf('cancelled') !== -1, true, 'cancel: overlay shows cancelled');
+  eq(h.sm._peek().recording, null, 'cancel: idle again');
+  h.helper.emit('shortcut', { id: 'main', down: true });
+  h.advance(TAP_MS + 200);
+  h.helper.emit('shortcut', { id: 'main', down: false });
+  await settle();
+  eq(h.pastes(), ['Hello world '], 'cancel: the next dictation works normally');
+});
+
 scenario('linux clipboard-only paste: history kept, overlay says press Ctrl+V', async function () {
   const h = harness();
   h.helper.paste = function (text) { h.calls.push(['paste', text]); return Promise.resolve({ ok: true, clipboardOnly: true, err: 'no keyboard access' }); };

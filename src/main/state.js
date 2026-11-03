@@ -657,7 +657,13 @@ function createStateMachine(deps) {
   // at a time) works unchanged and main/pad can never collide with a real key.
   const SHORTCUT_VK = { main: -1, pad: -2 };
   function onShortcut(info) {
-    if (!info || (info.id !== 'main' && info.id !== 'pad')) return;
+    if (!info) return;
+    if (info.id === 'cancel') {
+      // Linux replacement for Esc: cancels whatever is recording, like Esc does.
+      if (info.down && recording) cancel(recording);
+      return;
+    }
+    if (info.id !== 'main' && info.id !== 'pad') return;
     const isPad = info.id === 'pad';
     if (isPad && !padEnabled) return;
     const vk = SHORTCUT_VK[info.id];
