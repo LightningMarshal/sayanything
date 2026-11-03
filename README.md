@@ -98,12 +98,20 @@ You can have it hand each finished dictation to a local model for one last polis
 - Node.js 24+
 - Xcode Command Line Tools (`xcode-select --install`). Setup uses `swiftc` to build the tiny helper and `cmake` + `clang` to build the speech engine, all on your machine.
 
+## Install
+
+Download the latest Windows build from the [Releases page](https://github.com/LightningMarshal/sayanything/releases): `SayAnything-Setup-<version>.exe` (installer) or the portable zip.
+
+- **Check the download.** Each release has a `SHA256SUMS.txt`. In PowerShell: `Get-FileHash .\SayAnything-Setup-<version>.exe` and compare with the line in that file. Releases also carry a GitHub build-provenance attestation: `gh attestation verify <file> -R LightningMarshal/sayanything` proves the file was built by this repo's release workflow.
+- **Unsigned for now.** Windows SmartScreen will say "unknown publisher" the first time (More info → Run anyway). Code signing is planned.
+- **Mac and Linux:** build from source below for now. A Linux version is planned (see `docs/LINUX-PORT.md`).
+
 ## Setup and run
 
 Windows:
 
 ```powershell
-npm install            # installs Electron (the only devDependency)
+npm install            # dev tooling only (Electron, builder, lint); nothing ships at runtime
 node scripts/setup.js  # unpacks whisper, compiles the helper, grabs the default model
 npm start              # launches, shows up in your system tray
 ```
@@ -111,7 +119,7 @@ npm start              # launches, shows up in your system tray
 Mac:
 
 ```bash
-npm install                        # installs Electron (the only devDependency)
+npm install                        # dev tooling only; nothing ships at runtime
 bash scripts/build-whisper-mac.sh  # builds whisper.cpp (Metal) from source, once
 node scripts/setup.js              # compiles the helper, grabs the default model
 npm start                          # launches, shows up in your menu bar
@@ -128,7 +136,9 @@ Default model is **small.en** (466 MB). Smaller ones (`tiny.en`, `base.en`) and 
 
 ## Building a release
 
-Both of these bundle Whisper, the helper, and the default `small.en` model right into the package, so whoever runs it gets zero setup and no download.
+Releases are built by the **Release (draft)** GitHub workflow: push a tag `v<version>` matching `package.json` (or run it from the Actions tab). It builds the installer and portable zip on Windows, verifies the packaged app (security fuses, smoke test with the bundled model), writes `SHA256SUMS.txt`, adds a provenance attestation, and creates a **draft** release for you to review and publish.
+
+To build locally instead: both of these bundle Whisper, the helper, and the default `small.en` model right into the package, so whoever runs it gets zero setup and no download.
 
 ```powershell
 npm run dist:dir   # portable app -> dist\win-unpacked\  (also zipped)
