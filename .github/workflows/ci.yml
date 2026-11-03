@@ -64,6 +64,13 @@ jobs:
             echo "== $t"
             xvfb-run -a npx electron "test/$t.js" --no-sandbox
           done
+      - name: D-Bus tools for the Linux boot check
+        run: |
+          if ! command -v dbus-daemon >/dev/null; then
+            sudo apt-get update -q && sudo apt-get install -y -q dbus-daemon
+          fi
+      - name: Linux boot check (real app, fake desktop portal)
+        run: xvfb-run -a node test/linux-boot-check.js
 
   windows:
     name: Windows helper build + self-test

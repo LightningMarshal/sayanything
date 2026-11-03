@@ -17,8 +17,9 @@ const os = require('os');
 const path = require('path');
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sayanything-settings-test-'));
-process.env.APPDATA = tmp; // Windows + Linux fallback path in config.js
-process.env.HOME = tmp;    // macOS: ~/Library/Application Support
+process.env.APPDATA = tmp; // Windows
+process.env.HOME = tmp;    // macOS: ~/Library/Application Support; Linux: ~/.config fallback
+process.env.XDG_CONFIG_HOME = tmp; // Linux: preferred over ~/.config (CI runners set it)
 process.env.USERPROFILE = tmp;
 
 let passed = 0;

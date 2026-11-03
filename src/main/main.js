@@ -185,7 +185,8 @@ function boot() {
     .catch(function (err) {
       logError('helper.start failed', err);
       if (!setupNotice) {
-        notify('Say Anything: hotkey unavailable',
+        // The Linux portal adapter explains itself (no portal, request declined).
+        notify('Say Anything: hotkey unavailable', (err && err.userMessage) ||
           'The dictation hotkey may not work. Try running:  node scripts/setup.js');
       }
     });

@@ -1,7 +1,7 @@
 # Linux port plan
 
-Status: **phase 1 in progress.** Step 1 (D-Bus client + portal clients) is
-done; see "Phase 1 progress" below. The plan was revised after a market check
+Status: **phase 1 in progress.** Steps 1 (D-Bus client + portal clients) and 2
+(Linux adapter wired into the app) are done; see "Phase 1 progress" below. The plan was revised after a market check
 (see below). Priority order agreed with the owner: Windows,
 then Linux, then macOS. Linux was a non-goal upstream; this document is what
 changes to make it a goal.
@@ -107,10 +107,17 @@ compiled inside the Flatpak, and the code is tested in CI against a real bus.
 | Step | What | Status |
 |---|---|---|
 | 1 | `src/main/linux/dbus.js`: session-bus connection (SASL EXTERNAL), method calls, signals, full type marshalling. `src/main/linux/portal.js`: GlobalShortcuts (bind, list, activated/deactivated) and RemoteDesktop (keyboard-only, persist_mode=2 + restore token, Ctrl+V as keysyms). Portal signals are only accepted from the bus name that owns `org.freedesktop.portal.Desktop`, so another program on the bus can't forge a hotkey press. | Done. `test/dbus-test.js` (wire format on every OS; interop with a private `dbus-daemon` and systemd's `busctl` on Linux) and `test/portal-test.js` (fake portal on a private bus) |
-| 2 | Linux adapter behind the existing helper interface: shortcut activated/deactivated drives the hotkey state machine as press/release; paste = Electron clipboard + RemoteDesktop Ctrl+V, falling back to "press Ctrl+V"; restore token stored with the settings; `process.platform` branches in `config.js`, `binaries.js`, `helper.js`, `permissions.js` | Next |
-| 3 | Settings: show the compositor's trigger description; on Linux the shortcut is changed in the desktop's settings (or re-bound through the portal) instead of the rebind capture | Not started |
+| 2 | `src/main/linux/helper-linux.js`: Linux stand-in behind the existing helper interface (`helper.js` exports it on Linux). Shortcut activated/deactivated -> new `'shortcut'` event, which `state.js` maps to the same hold / tap-to-latch gestures. Paste = Electron clipboard + RemoteDesktop Ctrl+V (session created on the first paste, restore token saved 0600 in `linux-portal.json`), clipboard restored after; refused or missing keyboard access leaves the text on the clipboard and the overlay says "Copied. Press Ctrl+V to paste" (L3). Default triggers when the hotkey is a bare modifier: Ctrl+Super+Space (main) and Ctrl+Super+Shift+Space (pad); not Super+Space, which GNOME uses to switch keyboard layouts. `config.js`: user data in `$XDG_CONFIG_HOME/SayAnything`. `binaries.js`: one locally built `whisper-server` like macOS, with a clear error until step 4 | Done. `test/helper-linux-test.js` (fake portal), new `state-test.js` scenarios, and `test/linux-boot-check.js`, which boots the real app (`--smoke`) under Xvfb against a fake portal in CI |
+| 3 | Settings on Linux: show the shortcut the desktop actually bound (the adapter's `bound` event has the trigger description) and explain where to change it, instead of the rebind button; note that Esc-to-cancel is not available (a global Esc binding would take Esc from every app) | Next |
 | 4 | whisper-server for Linux (CPU build from the pinned v1.9.1 tag), Flatpak manifest, `.desktop` file, AppImage second | Not started |
 | 5 | Manual test matrix on SteamOS (KDE, Wayland) and Ubuntu 26.04 (GNOME 50, Wayland) | Needs the owner's machines |
+
+### Known gaps in phase 1 (by design or not yet done)
+
+- **No Esc to cancel** while recording: a global Esc shortcut would steal Esc from every app. Cancelling needs another route (step 3).
+- **Clipboard history:** the dictation briefly sits on the clipboard during a paste. Electron can't add KDE's `x-kde-passwordManagerHint` alongside the text, so Klipper and similar managers may record it. The restore puts back text, HTML, RTF and images only; other formats on the clipboard are lost.
+- **Typing mode** pastes instead (no per-character typing through the portal yet).
+- **Drop pad "place at point"** and the history "app" name are not available on Wayland.
 
 ## CI
 

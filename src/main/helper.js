@@ -520,4 +520,11 @@ class Helper extends EventEmitter {
   }
 }
 
-module.exports = new Helper();
+// Linux has no native helper: the hotkey and paste go through xdg-desktop-portal
+// over D-Bus, behind the same interface (src/main/linux/helper-linux.js).
+module.exports = process.platform === 'linux'
+  ? require('./linux/helper-linux').create({
+    settings: function () { return require('./stores/settings').get(); },
+    log: log,
+  })
+  : new Helper();

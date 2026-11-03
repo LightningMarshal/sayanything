@@ -6,7 +6,7 @@
  * Works both inside the Electron main process and in plain-node contexts such as
  * scripts/setup.js and the test scripts, always resolving to the per-user data dir
  * (%APPDATA%/SayAnything on Windows, ~/Library/Application Support/SayAnything on
- * macOS) so the same locations resolve either way.
+ * macOS, ~/.config/SayAnything on Linux) so the same locations resolve either way.
  *
  * Every value here is either identical cross-platform or resolved through a single
  * `IS_MAC` branch: binary names lose their `.exe` on darwin, the helper source is
@@ -48,9 +48,12 @@ function resolveUserData() {
   // identical. On darwin the roaming dir is ~/Library/Application Support (there is
   // no %APPDATA% — that env var is Windows-only), which is also what Electron's
   // getPath('appData') returns, so the two contexts still agree.
+  // Linux: $XDG_CONFIG_HOME or ~/.config, which is also Electron's appData there.
   let appData = IS_MAC
     ? path.join(os.homedir(), 'Library', 'Application Support')
-    : (process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'));
+    : process.platform === 'linux'
+      ? (process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'))
+      : (process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'));
   try {
     const electron = require('electron');
     if (electron && electron.app && typeof electron.app.getPath === 'function') {

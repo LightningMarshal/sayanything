@@ -54,7 +54,7 @@ for (const e of evts) ok(contracts.indexOf('"evt":"' + e + '"') !== -1, 'CONTRAC
 
 // 3. settings schema
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sayanything-drift-'));
-process.env.APPDATA = tmp; process.env.HOME = tmp; process.env.USERPROFILE = tmp;
+process.env.APPDATA = tmp; process.env.HOME = tmp; process.env.USERPROFILE = tmp; process.env.XDG_CONFIG_HOME = tmp;
 const DEFAULTS = require('../src/main/stores/settings').DEFAULTS;
 const block = (contracts.match(/## Settings schema[\s\S]*?```json\n([\s\S]*?)\n```/) || [])[1];
 ok(!!block, 'found the settings-schema JSON block');
