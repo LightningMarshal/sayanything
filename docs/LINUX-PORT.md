@@ -1,6 +1,8 @@
 # Linux port plan
 
-Status: **plan, not started; revised after a market check (see below).** Priority order agreed with the owner: Windows,
+Status: **phase 1 in progress.** Step 1 (D-Bus client + portal clients) is
+done; see "Phase 1 progress" below. The plan was revised after a market check
+(see below). Priority order agreed with the owner: Windows,
 then Linux, then macOS. Linux was a non-goal upstream; this document is what
 changes to make it a goal.
 
@@ -95,11 +97,27 @@ targets: **KDE Plasma on Wayland** and **GNOME on Wayland**.
   compositors only accept chords; the default Linux hotkey may need to be a
   chord such as Super+Space.
 
+## Phase 1 progress
+
+Design decision: **no Linux native helper.** The portals are D-Bus services,
+so the main process talks to them directly through a small D-Bus client in
+plain Node (`src/main/linux/dbus.js`, zero npm dependencies). Nothing has to be
+compiled inside the Flatpak, and the code is tested in CI against a real bus.
+
+| Step | What | Status |
+|---|---|---|
+| 1 | `src/main/linux/dbus.js`: session-bus connection (SASL EXTERNAL), method calls, signals, full type marshalling. `src/main/linux/portal.js`: GlobalShortcuts (bind, list, activated/deactivated) and RemoteDesktop (keyboard-only, persist_mode=2 + restore token, Ctrl+V as keysyms). Portal signals are only accepted from the bus name that owns `org.freedesktop.portal.Desktop`, so another program on the bus can't forge a hotkey press. | Done. `test/dbus-test.js` (wire format on every OS; interop with a private `dbus-daemon` and systemd's `busctl` on Linux) and `test/portal-test.js` (fake portal on a private bus) |
+| 2 | Linux adapter behind the existing helper interface: shortcut activated/deactivated drives the hotkey state machine as press/release; paste = Electron clipboard + RemoteDesktop Ctrl+V, falling back to "press Ctrl+V"; restore token stored with the settings; `process.platform` branches in `config.js`, `binaries.js`, `helper.js`, `permissions.js` | Next |
+| 3 | Settings: show the compositor's trigger description; on Linux the shortcut is changed in the desktop's settings (or re-bound through the portal) instead of the rebind capture | Not started |
+| 4 | whisper-server for Linux (CPU build from the pinned v1.9.1 tag), Flatpak manifest, `.desktop` file, AppImage second | Not started |
+| 5 | Manual test matrix on SteamOS (KDE, Wayland) and Ubuntu 26.04 (GNOME 50, Wayland) | Needs the owner's machines |
+
 ## CI
 
 The Linux CI job already runs lint, types, all unit tests and the C# compile
-check. Phase 1 adds an Electron smoke test under Xvfb and unit tests for the portal
-client with a fake D-Bus. Portal behaviour itself needs real GNOME and KDE
+check. Phase 1 adds unit tests for the D-Bus and portal clients against a private
+`dbus-daemon` and a fake portal (done), and an Electron smoke test under Xvfb
+(step 2). Portal behaviour itself needs real GNOME and KDE
 sessions (manual test matrix, or a GNOME/KDE VM in CI later).
 
 ## Open questions for the owner

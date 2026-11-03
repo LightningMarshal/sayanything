@@ -30,6 +30,13 @@ jobs:
         run: npm run lint
       - name: Type check (tsc --checkJs)
         run: npm run typecheck
+      - name: D-Bus tools for the Linux portal tests (dbus-daemon, busctl)
+        run: |
+          if ! command -v dbus-daemon >/dev/null || ! command -v busctl >/dev/null; then
+            sudo apt-get update -q && sudo apt-get install -y -q dbus-daemon systemd
+          fi
+          dbus-daemon --version | head -1
+          busctl --version | head -1
       - name: Unit and state-machine tests
         run: npm test
       - name: Install Mono (C# compiler)
