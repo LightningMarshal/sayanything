@@ -18,7 +18,7 @@
  *   rewriter, audioSession, windows, state, permissions: modules (optional ones
  *   may be null). restartWhisper(model), sendToSettings(ch, payload),
  *   maybeStartAfterDownload(name): main-process actions. log: logger.
- *   isDarwin: boolean. setTimer/clearTimer: default setTimeout/clearTimeout.
+ *   isDarwin, isLinux: booleans. setTimer/clearTimer: default setTimeout/clearTimeout.
  */
 function registerIpcHandlers(d) {
   const ipcMain = d.ipcMain;
@@ -38,6 +38,7 @@ function registerIpcHandlers(d) {
   const sendToSettings = d.sendToSettings;
   const maybeStartAfterDownload = d.maybeStartAfterDownload;
   const IS_DARWIN = !!d.isDarwin;
+  const IS_LINUX = !!d.isLinux;
   const setTimer = d.setTimer || setTimeout;
   const clearTimer = d.clearTimer || clearTimeout;
   const log = d.log || {};
@@ -162,6 +163,18 @@ function registerIpcHandlers(d) {
       version: version,
       whisper: { running: !!st.running, model: st.model || null, port: st.port || null },
       helper: { running: !!(helper && helper.ready) },
+    };
+  });
+
+  // Linux: the desktop owns the shortcuts (GlobalShortcuts portal). Settings shows
+  // what it actually bound instead of offering press-to-capture.
+  ipcMain.handle(ipc.HOTKEY_LINUX, function () {
+    const bound = (IS_LINUX && helper && Array.isArray(helper.bound)) ? helper.bound : [];
+    return {
+      linux: IS_LINUX,
+      bound: bound.map(function (b) {
+        return { id: String(b.id), description: String(b.description || ''), triggerDescription: String(b.triggerDescription || '') };
+      }),
     };
   });
 

@@ -17,7 +17,7 @@ const INVOKE = [
   'settings:get', 'settings:set',
   'models:list', 'models:download', 'models:cancel',
   'history:list', 'history:remove', 'history:clear',
-  'app:info', 'hotkey:capture', 'whisper:restart',
+  'app:info', 'hotkey:capture', 'hotkey:linux', 'whisper:restart',
   'rewrite:models',
 ];
 

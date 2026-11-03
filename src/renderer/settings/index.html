@@ -160,11 +160,12 @@
         <div class="card">
           <div class="card-head">
             <h2>Dictation key</h2>
-            <p class="hint">Hold to talk. Tap (under 250 ms) to latch hands-free; tap again to finish. Esc cancels while recording.</p>
+            <p class="hint" id="hotkey-hint">Hold to talk. Tap (under 250 ms) to latch hands-free; tap again to finish. Esc cancels while recording.</p>
           </div>
           <div class="hotkey-display">
             <kbd id="hotkey-name">Right Ctrl</kbd>
           </div>
+          <p class="hint" id="hotkey-linux-note" hidden></p>
           <div class="row">
             <div class="row-sub" id="hotkey-status">&nbsp;</div>
             <button class="btn primary" id="hotkey-capture">Change hotkey</button>
@@ -190,6 +191,16 @@
           <div class="row">
             <div class="row-sub" id="padhotkey-status">&nbsp;</div>
             <button class="btn primary" id="padhotkey-capture">Change pad key</button>
+          </div>
+        </div>
+
+        <div class="card" id="cancel-card" hidden>
+          <div class="card-head">
+            <h2>Cancel shortcut</h2>
+            <p class="hint">Stops a recording without inserting anything. On Linux this replaces Esc, which can't be taken over for every app.</p>
+          </div>
+          <div class="hotkey-display">
+            <kbd id="cancelhotkey-name">Not set</kbd>
           </div>
         </div>
 

@@ -13,6 +13,36 @@
   // Hotkey
   // -------------------------------------------------------------------------
 
+  // Linux: the desktop owns the shortcuts (GlobalShortcuts portal). Show what it
+  // actually bound, hide the press-to-capture buttons, and point at the
+  // desktop's own settings. `linuxInfo` is null on Windows/macOS.
+  var linuxInfo = null;
+
+  function setText(id, text) { var e = S.$(id); if (e) e.textContent = text; }
+
+  function applyLinux(info) {
+    if (!info || !info.linux) return;
+    linuxInfo = info;
+    var byId = {};
+    var bound = Array.isArray(info.bound) ? info.bound : [];
+    for (var i = 0; i < bound.length; i++) byId[bound[i].id] = bound[i];
+    function label(id) { var b = byId[id]; return (b && b.triggerDescription) || 'Not set'; }
+    setText('hotkey-name', label('dictate'));
+    setText('padhotkey-name', label('pad'));
+    setText('cancelhotkey-name', label('cancel'));
+    var ids = ['hotkey-capture', 'padhotkey-capture'];
+    for (var j = 0; j < ids.length; j++) { var b = S.$(ids[j]); if (b) b.hidden = true; }
+    setText('hotkey-hint', 'Hold to talk. Tap (under 250 ms) to latch hands-free; tap again to finish. Your cancel shortcut stops a recording.');
+    var note = S.$('hotkey-linux-note');
+    if (note) {
+      note.textContent = 'On Linux your desktop sets these shortcuts, and Say Anything never sees your other keys. ' +
+        'To change them, open your desktop\'s keyboard shortcut settings and look for Say Anything.';
+      note.hidden = false;
+    }
+    var card = S.$('cancel-card');
+    if (card) card.hidden = false;
+  }
+
   function renderHotkey() {
     if (!S.settings) return;
     // Fallbacks only apply if a stored name is blank; keep them platform-correct.
@@ -31,6 +61,10 @@
     if (sil && !S.focused(sil)) sil.value = ms;
     var out = S.$('autostop-silence-out');
     if (out) out.textContent = (ms / 1000).toFixed(1) + ' s';
+
+    // The names above came from saved settings; on Linux the desktop's bindings win.
+    if (linuxInfo) applyLinux(linuxInfo);
+    S.api.invoke('hotkey:linux').then(applyLinux, function () { /* older main: not Linux */ });
   }
 
   // Combo hotkeys (issue #1): the capture result carries the trigger vk/name plus
@@ -143,6 +177,7 @@
 
 
   S.renderHotkey = renderHotkey;
+  S.applyLinux = applyLinux;
   S.IS_MAC = IS_MAC;
   S.MOD_NORMALIZE = MOD_NORMALIZE;
   S.MOD_LABEL = MOD_LABEL;

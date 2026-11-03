@@ -117,6 +117,15 @@ eq(Object.keys(h.handle).every(function (c) { return h.handle[c].length === 1; }
   const list = await h.handle[ipc.MODELS_LIST][0]({});
   eq(list.map(function (m) { return [m.name, m.downloaded, m.active]; }), [['small.en', true, true], ['tiny.en', false, false]], 'models:list');
 
+  // hotkey:linux reports what the desktop bound, and only on Linux.
+  const notLinux = await h.handle[ipc.HOTKEY_LINUX][0]({});
+  eq(notLinux, { linux: false, bound: [] }, 'hotkey:linux on Windows/macOS: linux false, nothing bound');
+  const hl = harness({ isLinux: true });
+  hl.helper.bound = [{ id: 'dictate', description: 'Dictate', triggerDescription: 'Ctrl+Meta+Space', extra: 'dropped' }];
+  const onLinux = await hl.handle[ipc.HOTKEY_LINUX][0]({});
+  eq(onLinux, { linux: true, bound: [{ id: 'dictate', description: 'Dictate', triggerDescription: 'Ctrl+Meta+Space' }] },
+    'hotkey:linux on Linux: bound shortcuts, only the documented fields');
+
   // Hotkey capture: an abandoned capture times out AND disarms the helper.
   const h2 = harness();
   const p = h2.handle[ipc.HOTKEY_CAPTURE][0]({});

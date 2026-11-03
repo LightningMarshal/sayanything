@@ -29,6 +29,7 @@ ipcMain.handle('models:list', function () { return FAKE_MODELS; });
 ipcMain.handle('history:list', function () { return []; });
 ipcMain.handle('app:info', function () { return { version: '0.1.0', whisper: {}, helper: {} }; });
 ipcMain.handle('rewrite:models', function () { return { reachable: false, models: [], host: '' }; });
+ipcMain.handle('hotkey:linux', function () { return { linux: false, bound: [] }; });
 
 app.whenReady().then(async function () {
   const win = new BrowserWindow({

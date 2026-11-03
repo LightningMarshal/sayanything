@@ -6,11 +6,12 @@
  * Same interface as src/main/helper.js, so main.js / state.js / ipc-handlers.js
  * use it unchanged, but built on xdg-desktop-portal instead of a child process:
  *
- *  - Hotkey: GlobalShortcuts. Two shortcuts are bound once, 'dictate' (main)
- *    and 'pad'. The desktop owns the key binding; we only hear "pressed" /
+ *  - Hotkey: GlobalShortcuts. Three shortcuts are bound once: 'dictate'
+ *    (main), 'pad' and 'cancel'. The desktop owns the key binding; we only hear "pressed" /
  *    "released" and emit 'shortcut' {id:'main'|'pad', down}. No keystroke is
- *    ever seen by the app. Esc-to-cancel and the WS-5 'chord' bit do not exist
- *    here (a global Esc binding would steal Esc from every app).
+ *    ever seen by the app. A third shortcut, 'cancel' (Ctrl+Super+Esc by
+ *    default), replaces Esc-to-cancel: a global plain Esc would steal Esc from
+ *    every app. The WS-5 'chord' bit does not exist here.
  *  - Paste: the text goes on the clipboard (Electron), then Ctrl+V is sent
  *    through a keyboard-only RemoteDesktop session, created on the first paste.
  *    Its restore token is saved (0600) so later launches don't ask again. If
@@ -21,7 +22,7 @@
  *  - Not possible on Wayland: rebind capture (the shortcut is changed in the
  *    desktop's settings), drop-pad "place at point", foreground app name.
  *
- * Events: 'ready', 'shortcut' {id, down}, 'bound' [{id, description,
+ * Events: 'ready', 'shortcut' {id:'main'|'pad'|'cancel', down}, 'bound' [{id, description,
  * triggerDescription}], 'log' msg, 'crash' {code, signal}, 'unavailable'
  * {restarts}.
  */
@@ -37,7 +38,7 @@ const MAX_RESTARTS = 3;
 // (bare modifiers like Right Ctrl, which compositors generally don't accept as
 // a global shortcut; L4 in docs/LINUX-PORT.md). Not Super+Space: GNOME uses
 // that to switch keyboard layouts.
-const DEFAULT_TRIGGER = { main: 'CTRL+LOGO+space', pad: 'CTRL+LOGO+SHIFT+space' };
+const DEFAULT_TRIGGER = { main: 'CTRL+LOGO+space', pad: 'CTRL+LOGO+SHIFT+space', cancel: 'CTRL+LOGO+Escape' };
 
 const MOD_NAMES = { 16: 'SHIFT', 17: 'CTRL', 18: 'ALT', 91: 'LOGO' };
 
@@ -176,6 +177,10 @@ class LinuxHelper extends EventEmitter {
           preferredTrigger: triggerFor(st.hotkey) || DEFAULT_TRIGGER.main },
         { id: 'pad', description: 'Dictate to the drop pad',
           preferredTrigger: triggerFor(st.padHotkey) || DEFAULT_TRIGGER.pad },
+        // Esc can't be bound globally without stealing it from every app, so
+        // cancelling a recording gets its own chord.
+        { id: 'cancel', description: 'Cancel the current dictation',
+          preferredTrigger: DEFAULT_TRIGGER.cancel },
       ], '');
     } catch (e) {
       try { await gs.close(); } catch (e2) { /* ignore */ }
@@ -200,6 +205,7 @@ class LinuxHelper extends EventEmitter {
   _onShortcut(id, down) {
     if (id === 'dictate') this.emit('shortcut', { id: 'main', down: down });
     else if (id === 'pad') this.emit('shortcut', { id: 'pad', down: down });
+    else if (id === 'cancel') this.emit('shortcut', { id: 'cancel', down: down });
   }
 
   _onLost(why) {
@@ -306,7 +312,7 @@ class LinuxHelper extends EventEmitter {
 
   capture() {
     throw userError('rebind capture is not available on Linux',
-      'On Linux the shortcut is set in your desktop settings (KDE: System Settings > Shortcuts; GNOME: Settings > Keyboard).');
+      'On Linux the shortcut is set in your desktop settings: open your desktop\'s keyboard shortcut settings and look for Say Anything.');
   }
 
   captureCancel() {}

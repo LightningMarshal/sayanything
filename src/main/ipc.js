@@ -43,6 +43,7 @@ const CH = {
   HISTORY_CLEAR: 'history:clear',
   APP_INFO: 'app:info',
   HOTKEY_CAPTURE: 'hotkey:capture',
+  HOTKEY_LINUX: 'hotkey:linux',       // -> { linux, bound:[{id, description, triggerDescription}] }
   WHISPER_RESTART: 'whisper:restart',
   REWRITE_MODELS: 'rewrite:models',   // -> { reachable, models:[name], host }
 
@@ -80,7 +81,7 @@ const SETTINGS = {
     CH.SETTINGS_GET, CH.SETTINGS_SET,
     CH.MODELS_LIST, CH.MODELS_DOWNLOAD, CH.MODELS_CANCEL,
     CH.HISTORY_LIST, CH.HISTORY_REMOVE, CH.HISTORY_CLEAR,
-    CH.APP_INFO, CH.HOTKEY_CAPTURE, CH.WHISPER_RESTART,
+    CH.APP_INFO, CH.HOTKEY_CAPTURE, CH.HOTKEY_LINUX, CH.WHISPER_RESTART,
     CH.REWRITE_MODELS,
   ],
 };
