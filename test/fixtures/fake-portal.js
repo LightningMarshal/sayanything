@@ -12,6 +12,7 @@
  *   cancel        Set of method names to answer with response code 1
  *   grantDevices  devices bitmask Start reports (default 1 = keyboard)
  *   restoreToken  restore_token Start reports
+ *   missing       Set of interface names to report as absent (no version)
  * Records: calls (every method call), keys ([keysym, state] per
  * NotifyKeyboardKeysym), selectOptions (last SelectDevices options), bound.
  */
@@ -32,6 +33,7 @@ async function startFakePortal(address) {
     cancel: new Set(),
     grantDevices: 1,
     restoreToken: 'restore-2',
+    missing: new Set(),
     calls: [],
     keys: [],
     selectOptions: null,
@@ -82,6 +84,9 @@ async function startFakePortal(address) {
   conn.serve(OBJ, function (m) {
     fake.calls.push(m.member);
     if (m.interface === 'org.freedesktop.DBus.Properties' && m.member === 'Get') {
+      if (fake.missing.has(m.body[0])) {
+        const e = new Error('No such interface'); /** @type {any} */ (e).dbusName = 'org.freedesktop.DBus.Error.UnknownInterface'; throw e;
+      }
       return { signature: 'v', body: [['u', m.body[0] === 'org.freedesktop.portal.GlobalShortcuts' ? 1 : 2]] };
     }
     if (m.interface === 'org.freedesktop.portal.GlobalShortcuts') {

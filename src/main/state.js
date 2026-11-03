@@ -227,10 +227,10 @@ function createStateMachine(deps) {
     sendOverlayState('rewriting', {});
   }
 
-  function overlaySuccess(session, text) {
+  function overlaySuccess(session, text, message) {
     if (overlayOwner !== session.id) return;
     try { windows.showOverlay(); } catch (e) { /* ignore */ }
-    sendOverlayState('success', { text: text });
+    sendOverlayState('success', message ? { text: text, message: message } : { text: text });
     scheduleHide(session, SUCCESS_MS);
   }
 
@@ -503,13 +503,17 @@ function createStateMachine(deps) {
         overlayError(session, 'Could not insert text');
         return;
       }
+      // Linux without keyboard access (RemoteDesktop portal refused or missing):
+      // the text was left on the clipboard for the user to paste themselves.
+      const clipboardOnly = !!res.clipboardOnly;
+      if (clipboardOnly) log.info('state: text left on the clipboard (' + (res.err || 'no keyboard access') + ')');
       return fgPromise.then(function (fg) {
         try {
           history.add({ text: text, ms: ms, app: (fg && fg.exe) || '' });
         } catch (e) {
           log.error('state: history.add failed', e);
         }
-        overlaySuccess(session, text);
+        overlaySuccess(session, text, clipboardOnly ? 'Copied. Press Ctrl+V to paste' : '');
       });
     }, function (err) {
       log.error('state: injection failed (session ' + session.id + ')', err);
@@ -647,6 +651,19 @@ function createStateMachine(deps) {
     }
   }
 
+  // Linux (Wayland portals): the desktop owns the key binding and reports only
+  // "shortcut pressed / released", with no key codes. Each binding gets its own
+  // negative pseudo-vk so the gesture logic (hold vs tap-to-latch, one gesture
+  // at a time) works unchanged and main/pad can never collide with a real key.
+  const SHORTCUT_VK = { main: -1, pad: -2 };
+  function onShortcut(info) {
+    if (!info || (info.id !== 'main' && info.id !== 'pad')) return;
+    const isPad = info.id === 'pad';
+    if (isPad && !padEnabled) return;
+    const vk = SHORTCUT_VK[info.id];
+    if (info.down) onGestureDown(vk, isPad); else onGestureUp(vk);
+  }
+
   function onKey(info) {
     if (!info || typeof info.vk !== 'number') return;
     const vk = info.vk;
@@ -746,6 +763,7 @@ function createStateMachine(deps) {
 
     helper.on('key', onKey);
     helper.on('chord', onChord);
+    helper.on('shortcut', onShortcut);
 
     helper.on('crash', function (info) {
       log.warn('state: helper crashed (code=' + (info && info.code) + ') — supervisor will restart');

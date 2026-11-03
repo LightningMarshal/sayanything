@@ -90,9 +90,10 @@ function harness(opts) {
   helper.foreground = function () { return Promise.resolve({ exe: 'notepad.exe', title: 'x' }); };
 
   const overlay = [];           // overlay states in order
+  const overlayDetails = [];    // matching detail objects
   const windows = {
     getOverlayWC: function () {
-      return { send: function (ch, payload) { if (ch === ipc.OVERLAY_STATE) overlay.push(payload.state); else calls.push([ch, payload]); } };
+      return { send: function (ch, payload) { if (ch === ipc.OVERLAY_STATE) { overlay.push(payload.state); overlayDetails.push(payload.detail); } else calls.push([ch, payload]); } };
     },
     getPadWC: function () { return { send: function (ch, payload) { calls.push([ch, payload]); } }; },
     showOverlay: function () {}, hideOverlay: function () {},
@@ -161,7 +162,7 @@ function harness(opts) {
   }
 
   return {
-    sm: sm, helper: helper, calls: calls, overlay: overlay, audio: audio, history: history,
+    sm: sm, helper: helper, calls: calls, overlay: overlay, overlayDetails: overlayDetails, audio: audio, history: history,
     settingsStore: settingsStore, advance: advance, key: key, press: press,
     pastes: function () { return calls.filter(function (c) { return c[0] === 'paste'; }).map(function (c) { return c[1]; }); },
     copies: function () { return calls.filter(function (c) { return c[0] === 'copy'; }); },
@@ -451,6 +452,53 @@ scenario('chord: ignored when idle or already transcribing', async function () {
   h.helper.emit('chord');            // after release: session already finalized
   await settle();
   eq(h.pastes(), ['Hello world '], 'chord after release: dictation unaffected');
+});
+
+scenario('linux shortcut: hold pastes, tap latches, second tap finalizes', async function () {
+  const h = harness();
+  h.helper.emit('shortcut', { id: 'main', down: true });
+  h.advance(TAP_MS + 200);
+  h.helper.emit('shortcut', { id: 'main', down: false });
+  await settle();
+  eq(h.pastes(), ['Hello world '], 'shortcut hold: pasted once');
+  h.helper.emit('shortcut', { id: 'main', down: true });
+  h.advance(100);
+  h.helper.emit('shortcut', { id: 'main', down: false });
+  await settle();
+  eq(h.sm._peek().recording && h.sm._peek().recording.phase, 'latched', 'shortcut tap: latched');
+  h.advance(2000);
+  h.helper.emit('shortcut', { id: 'main', down: true });
+  h.helper.emit('shortcut', { id: 'main', down: false });
+  await settle();
+  eq(h.pastes(), ['Hello world ', 'Hello world '], 'shortcut: second tap finalized');
+  eq(h.sm._peek().recording, null, 'shortcut: idle again');
+});
+
+scenario('linux shortcut: pad shortcut copies to the pad; ignored when the pad is off', async function () {
+  const h = harness();
+  h.helper.emit('shortcut', { id: 'pad', down: true });
+  h.advance(TAP_MS + 200);
+  h.helper.emit('shortcut', { id: 'pad', down: false });
+  await settle();
+  eq(h.copies().length, 1, 'pad shortcut: text copied for the pad');
+  eq(h.pastes(), [], 'pad shortcut: nothing pasted');
+  const h2 = harness({ settings: { pad: { enabled: false } } });
+  h2.helper.emit('shortcut', { id: 'pad', down: true });
+  eq(h2.sm._peek().recording, null, 'pad shortcut: ignored when the pad is disabled');
+  h2.helper.emit('shortcut', { id: 'bogus', down: true });
+  eq(h2.sm._peek().recording, null, 'unknown shortcut id: ignored');
+});
+
+scenario('linux clipboard-only paste: history kept, overlay says press Ctrl+V', async function () {
+  const h = harness();
+  h.helper.paste = function (text) { h.calls.push(['paste', text]); return Promise.resolve({ ok: true, clipboardOnly: true, err: 'no keyboard access' }); };
+  h.helper.emit('shortcut', { id: 'main', down: true });
+  h.advance(TAP_MS + 200);
+  h.helper.emit('shortcut', { id: 'main', down: false });
+  await settle();
+  eq(h.overlay.slice(0, 3), ['listening', 'transcribing', 'success'], 'clipboard-only: success, not error');
+  eq(h.overlayDetails[2] && h.overlayDetails[2].message, 'Copied. Press Ctrl+V to paste', 'clipboard-only: overlay tells the user to press Ctrl+V');
+  eq(h.history.items.length, 1, 'clipboard-only: history recorded');
 });
 
 // ---------------------------------------------------------------------------

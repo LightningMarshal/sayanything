@@ -37,6 +37,10 @@ const {
 const HASHES = require('./hashes');
 
 const IS_MAC = process.platform === 'darwin';
+// Linux, like darwin, uses one locally built whisper-server (no official Linux
+// server release to download). Packaging it is step 4 of docs/LINUX-PORT.md.
+const IS_LINUX = process.platform === 'linux';
+const IS_POSIX = IS_MAC || IS_LINUX;
 
 function sha256File(p) {
   return new Promise(function (resolve, reject) {
@@ -50,12 +54,12 @@ function sha256File(p) {
 
 // Absolute path to the whisper HTTP server binary (no .exe on darwin).
 function serverExe() {
-  return path.join(BIN_WHISPER, IS_MAC ? 'whisper-server' : 'whisper-server.exe');
+  return path.join(BIN_WHISPER, IS_POSIX ? 'whisper-server' : 'whisper-server.exe');
 }
 
 /** True when the binaries appear to be fully present. */
 function isReady() {
-  if (IS_MAC) {
+  if (IS_POSIX) {
     // Static link means whisper-server is the ONLY file in bin/whisper; require it
     // to exist AND be executable (a non-executable stage is not usable).
     try { fs.accessSync(serverExe(), fs.constants.X_OK); return true; }
@@ -151,6 +155,18 @@ async function downloadFile(url, dest) {
  */
 async function ensure() {
   if (isReady()) return;
+
+  if (IS_LINUX) {
+    const exe = serverExe();
+    try {
+      fs.accessSync(exe, fs.constants.X_OK);
+    } catch (e) {
+      throw new Error('whisper-server missing or not executable at ' + exe +
+        ' — the Linux build is not packaged yet (docs/LINUX-PORT.md, step 4); build whisper.cpp v1.9.1\'s' +
+        ' whisper-server and place it there', { cause: e });
+    }
+    return;
+  }
 
   if (IS_MAC) {
     // No official macOS whisper-server release exists to download, and the build

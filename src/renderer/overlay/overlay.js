@@ -240,7 +240,9 @@
 
       case 'success':
         stopLoop();
-        var said = tail(detail.text, 40);
+        // detail.message: e.g. Linux "Copied. Press Ctrl+V to paste" when the
+        // text could only be left on the clipboard.
+        var said = detail.message ? tail(detail.message, 44) : tail(detail.text, 40);
         if (said) setMsg(said); else setLabel('Inserted');
         pill.setAttribute('data-state', 'success');
         break;
