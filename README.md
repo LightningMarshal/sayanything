@@ -205,7 +205,12 @@ Privacy here isn't a setting, it's how the thing is built.
 
 Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how the code's laid out and the C# / no-dependency rules to keep.
 
-> Regenerating the screenshots: `npx electron scripts/capture-screens.js` renders the pill and both settings tabs to `assets/screenshots/`.
+> Regenerating the README images (all rendered from the app's own pages, so they track the UI):
+> - `npx electron scripts/capture-screens.js` renders the pill and both settings tabs to `assets/screenshots/`.
+> - `npx electron scripts/capture-demo.js` renders `assets/demo.gif` from the real pill and drop pad (needs `ffmpeg`).
+> - `node scripts/gen-social.js` renders `assets/social-preview.png` (upload it under the repository's Settings > Social preview).
+>
+> On Linux without a desktop, prefix with `xvfb-run -a` and add `--no-sandbox` when running as root.
 
 ## License
 
