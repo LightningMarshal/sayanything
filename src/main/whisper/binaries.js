@@ -32,13 +32,14 @@ const {
   WHISPER_ZIP_CACHE,
   WHISPER_ZIP_URL,
   WHISPER_BUILD_MAC,
+  WHISPER_BUILD_LINUX,
   TAR,
 } = require('../config');
 const HASHES = require('./hashes');
 
 const IS_MAC = process.platform === 'darwin';
 // Linux, like darwin, uses one locally built whisper-server (no official Linux
-// server release to download). Packaging it is step 4 of docs/LINUX-PORT.md.
+// server release to download), built by scripts/build-whisper-linux.sh.
 const IS_LINUX = process.platform === 'linux';
 const IS_POSIX = IS_MAC || IS_LINUX;
 
@@ -162,8 +163,7 @@ async function ensure() {
       fs.accessSync(exe, fs.constants.X_OK);
     } catch (e) {
       throw new Error('whisper-server missing or not executable at ' + exe +
-        ' — the Linux build is not packaged yet (docs/LINUX-PORT.md, step 4); build whisper.cpp v1.9.1\'s' +
-        ' whisper-server and place it there', { cause: e });
+        ' — build it with ' + WHISPER_BUILD_LINUX, { cause: e });
     }
     return;
   }

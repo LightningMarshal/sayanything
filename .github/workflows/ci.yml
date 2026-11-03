@@ -72,6 +72,36 @@ jobs:
       - name: Linux boot check (real app, fake desktop portal)
         run: xvfb-run -a node test/linux-boot-check.js
 
+  # Linux: build whisper-server from the pinned tag and transcribe a real sample
+  # through the app's own server.js/client.js. Also checks the per-launch
+  # --request-path lockdown (WS-13) against the real binary.
+  whisper-linux:
+    name: Linux whisper-server build + real transcription
+    runs-on: ubuntu-latest
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install dev dependencies
+        run: npm ci
+      - name: Cache the whisper.cpp source and build tree
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/SayAnything/whisper-build
+          key: whisper-linux-v1.9.1-${{ hashFiles('scripts/build-whisper-linux.sh') }}
+      - name: Build whisper-server (static, CPU, x86-64-v3)
+        run: scripts/build-whisper-linux.sh
+      - name: Cache the tiny.en test model
+        uses: actions/cache@v4
+        with:
+          path: ~/sa-e2e
+          key: model-tiny.en-921e4cf8686fdd99
+      - name: Real transcription (tiny.en, jfk.wav) + request-path lockdown
+        run: SA_REQUIRE_WHISPER=1 SA_E2E_DATA="$HOME/sa-e2e" node test/whisper-linux-e2e.js
+
   windows:
     name: Windows helper build + self-test
     runs-on: windows-latest
