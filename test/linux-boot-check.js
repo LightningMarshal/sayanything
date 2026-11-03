@@ -9,8 +9,8 @@
  *     GlobalShortcuts session, bound 'dictate', 'pad' and 'cancel', and
  *     answers ping
  *   - the app closes its portal session on exit
- *   - the whisper 'binaries' check fails with the step-4 guidance (no Linux
- *     whisper-server is packaged yet; docs/LINUX-PORT.md)
+ *   - the whisper 'binaries' check passes when scripts/build-whisper-linux.sh
+ *     has been run, and otherwise names that script
  *
  * Run with plain node (it spawns Electron itself) under a display, e.g.
  *   xvfb-run -a node test/linux-boot-check.js
@@ -70,8 +70,8 @@ async function main() {
     check(fake.bound.length === 3 && fake.bound.map(function (b) { return b.id; }).join() === 'dictate,pad,cancel',
       'the app bound dictate + pad + cancel through GlobalShortcuts');
     check(fake.calls.indexOf('Session.Close') !== -1, 'the app closed its portal session on exit');
-    check(by.binaries && !by.binaries.ok && /LINUX-PORT\.md, step 4/.test(String(by.binaries.detail)),
-      'missing Linux whisper-server reported with the step-4 guidance');
+    check(by.binaries && (by.binaries.ok || /build-whisper-linux\.sh/.test(String(by.binaries.detail))),
+      'whisper-server present, or its absence reported with the build script to run');
   } finally {
     fake.stop();
     bus.stop();

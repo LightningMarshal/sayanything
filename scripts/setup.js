@@ -31,6 +31,7 @@ const binaries = require('../src/main/whisper/binaries');
 const models = require('../src/main/whisper/models');
 
 const IS_MAC = process.platform === 'darwin';
+const IS_LINUX = process.platform === 'linux';
 const DEFAULT_MODEL = 'small.en';
 
 function parseArgs(argv) {
@@ -91,6 +92,12 @@ async function step1Binaries(status) {
       console.error('      whisper-server not found in ' + config.BIN_WHISPER);
       console.error('      build it first:  bash ' + config.WHISPER_BUILD_MAC);
       return;
+    } else if (IS_LINUX) {
+      // Same as macOS: built from source (static CPU build), never downloaded.
+      status.binaries = 'FAIL';
+      console.error('      whisper-server not found in ' + config.BIN_WHISPER);
+      console.error('      build it first:  bash ' + config.WHISPER_BUILD_LINUX);
+      return;
     } else {
       console.log('      unpacking from ' + path.join(config.THIRD_PARTY, config.WHISPER_ZIP_CACHE));
       console.log('      (if the cache is missing it is downloaded from GitHub)');
@@ -109,6 +116,13 @@ function step2Helper(status) {
   const buildScript = config.HELPER_BUILD;         // native/build.cmd | native/build-mac.sh
   const buildName = path.basename(buildScript);
   console.log('[2/4] Native helper (' + helperName + ')');
+  if (IS_LINUX) {
+    // Linux has no native helper: the hotkey and paste go through the desktop
+    // portals over D-Bus (src/main/linux/).
+    status.helper = 'ok';
+    console.log('      not needed on Linux (desktop portals are used instead)');
+    return;
+  }
   try {
     if (fs.existsSync(config.BIN_HELPER)) {
       status.helper = 'ok';

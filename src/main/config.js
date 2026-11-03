@@ -91,6 +91,8 @@ module.exports = {
   WHISPER_ZIP_CACHE: 'whisper-bin-x64-v1.9.1.zip',
   WHISPER_ZIP_URL: 'https://github.com/ggml-org/whisper.cpp/releases/download/v1.9.1/whisper-bin-x64.zip',
   WHISPER_BUILD_MAC: path.join(REPO_ROOT, 'scripts', 'build-whisper-mac.sh'),
+  // Linux: static CPU build of the same pinned tag (docs/LINUX-PORT.md step 4).
+  WHISPER_BUILD_LINUX: path.join(REPO_ROOT, 'scripts', 'build-whisper-linux.sh'),
   MODEL_BASE_URL: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/',
   DEFAULT_PORT: 8737,
   // Windows-only toolchain paths. On darwin the helper is built by swiftc (invoked
