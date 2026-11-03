@@ -79,7 +79,7 @@ Both artifacts are **unsigned**, so Windows SmartScreen says "unknown publisher"
 - **Drop pad**: drag-to-drop (was click-to-place).
 - Reviewed after each feature; the review-found bugs (hotkey mis-route, stale-modifier misfire, loopback redirect bypass) are fixed.
 
-## Fork remediation status (Say Anything, 2026-11-02)
+## Fork remediation status (Say Anything, updated 2026-11-03)
 
 Work items from the fork review (IDs WS-0 to WS-15). "CI" means verified by the
 three-platform GitHub Actions workflow; "hardware" means it still needs a real
@@ -93,14 +93,14 @@ desktop, see `docs/MANUAL-TESTS.md`.
 | WS-3 | Clipboard restore lost rich content | Fixed (all formats, bounded); HTML restore verified in CI |
 | WS-4 | Download integrity | Done: every model and the Windows zip SHA-256 pinned (cross-checked with Hugging Face), Mac whisper commit pinned |
 | WS-5 | Hotkey shortcuts (Ctrl+Arrow, AltGr) misfire | Fixed with the one-bit `chord` event; hardware check pending |
-| WS-6 | State machine untestable | Refactored, 21 scenarios; main.js split into ipc-handlers / smoke / onboarding / media-permissions modules |
+| WS-6 | State machine untestable | Refactored, 21 scenarios; main.js split into ipc-handlers / smoke / onboarding / media-permissions modules; Settings renderer split into one file per tab (PR #9) |
 | WS-7 | CI Windows-only | Linux + Windows + macOS + Electron renderer jobs; lint and type checks cover main, preloads and renderers |
 | WS-8 | Doc drift, docs shipped in installer | Fixed; docs-drift test guards it |
 | WS-9 | Insert without the clipboard (UIA / AX) | Not started |
 | WS-10 | History privacy | Off by default, encrypted at rest, fail closed |
 | WS-11 | Boot fails silently | Required modules now fatal with a dialog |
-| WS-12 | Distribution and trust (signing, releases, fuses) | Deferred by the owner: code signing (Windows certificate, Apple Developer ID) is a future feature, after every review category is above 9 |
-| WS-13 | Unfinished code review | In progress. Done: renderer CSP without 'unsafe-inline', no dynamic innerHTML, preload allowlists == IPC handlers (tested), mic-only permissions (tested), helper JSON parser fuzzed (stack-overflow fixed). Remaining: Swift helper read-through, Electron fuses (needs electron-builder 26 or @electron/fuses + a packaging CI job), whisper server/client review |
+| WS-12 | Distribution and trust (signing, releases, fuses) | Electron fuses on packaged builds (verified in CI on the built .exe); Windows packaging job in CI; draft-release workflow with SHA256SUMS + provenance attestation (PR #11). Code signing deferred by the owner until every category is above 9 |
+| WS-13 | Unfinished code review | In progress. Done: renderer CSP without 'unsafe-inline', no dynamic innerHTML, preload allowlists == IPC handlers (tested), mic-only permissions (tested), helper JSON parser fuzzed (stack-overflow fixed). Electron fuses done (PR #10). Remaining: Swift helper read-through, whisper server/client review, network egress test (WS-14, needs hardware) |
 | WS-14 | Empirical "100% local" egress test | Not started (needs hardware) |
 | WS-15 | Product ideas | Owner's call |
 | Linux | Port | Plan in `docs/LINUX-PORT.md` revised: Wayland portals first (SteamOS KDE + Ubuntu GNOME), Flatpak; L3-L4 open |
