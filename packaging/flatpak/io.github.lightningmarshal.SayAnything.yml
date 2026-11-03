@@ -1,0 +1,91 @@
+# Flatpak manifest for Say Anything (docs/LINUX-PORT.md, phase 1 step 4b).
+#
+# Builds an installable bundle for testing (CI job "flatpak"). It packages the
+# app that electron-builder already produced (dist/linux-unpacked, with the
+# Electron fuses applied) and builds whisper-server from the pinned whisper.cpp
+# commit inside the Flatpak SDK. A Flathub submission will later need the app
+# built from source offline as well (flatpak-node-generator); see LINUX-PORT.md.
+#
+# Local build (from the repo root, after `npx electron-builder --linux --dir`):
+#   flatpak-builder --user --install --force-clean build-flatpak \
+#     packaging/flatpak/io.github.lightningmarshal.SayAnything.yml
+
+id: io.github.lightningmarshal.SayAnything
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '25.08'
+command: sayanything
+separate-locales: false
+
+finish-args:
+  # Display: native Wayland, X11 only when there is no Wayland session.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # Microphone. PulseAudio/PipeWire-pulse only; no --device=all.
+  - --socket=pulseaudio
+  # Network: the in-app model download (Hugging Face, SHA-256 pinned) and the
+  # optional local rewrite server (Ollama on the host's 127.0.0.1). Dictation
+  # itself never leaves the device; whisper-server runs inside the sandbox.
+  - --share=network
+  # Tray icon and notifications.
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+  # The hotkey (GlobalShortcuts) and paste (RemoteDesktop) go through
+  # xdg-desktop-portal, which every Flatpak app may use without extra
+  # permissions; the user approves each in a desktop dialog.
+
+modules:
+  - name: whisper-server
+    buildsystem: simple
+    build-options:
+      arch:
+        x86_64:
+          env:
+            # Same portable x86-64-v3 baseline as scripts/build-whisper-linux.sh.
+            CPU_FLAGS: -DGGML_NATIVE=OFF -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON
+        aarch64:
+          env:
+            CPU_FLAGS: -DGGML_NATIVE=OFF
+    build-commands:
+      - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release $CPU_FLAGS
+        -DGGML_OPENMP=OFF -DBUILD_SHARED_LIBS=OFF -DWHISPER_BUILD_EXAMPLES=ON
+        -DWHISPER_BUILD_SERVER=ON -DWHISPER_BUILD_TESTS=OFF -DWHISPER_SDL2=OFF
+        -DWHISPER_CURL=OFF
+      - cmake --build build --target whisper-server
+      - build/bin/whisper-server --help 2>&1 | grep -q -- --request-path
+      - install -Dm755 build/bin/whisper-server /app/lib/sayanything/resources/bin/whisper/whisper-server
+    sources:
+      - type: git
+        url: https://github.com/ggml-org/whisper.cpp
+        tag: v1.9.1
+        commit: f049fff95a089aa9969deb009cdd4892b3e74916
+
+  - name: sayanything
+    buildsystem: simple
+    build-commands:
+      # The packaged app, minus any whisper binary staged from the build host
+      # (the sandbox's own build above is the one that ships) and minus
+      # chrome-sandbox (setuid is not allowed; zypak provides the sandbox).
+      - rm -rf app/resources/bin/whisper app/chrome-sandbox
+      - mkdir -p /app/lib/sayanything
+      - cp -a app/. /app/lib/sayanything/
+      - install -Dm755 sayanything.sh /app/bin/sayanything
+      - install -Dm644 io.github.lightningmarshal.SayAnything.desktop -t /app/share/applications
+      - install -Dm644 io.github.lightningmarshal.SayAnything.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 SayAnything.png /app/share/icons/hicolor/256x256/apps/io.github.lightningmarshal.SayAnything.png
+    sources:
+      - type: dir
+        path: ../../dist/linux-unpacked
+        dest: app
+      - type: file
+        path: sayanything.sh
+      - type: file
+        path: io.github.lightningmarshal.SayAnything.desktop
+      - type: file
+        path: io.github.lightningmarshal.SayAnything.metainfo.xml
+      - type: file
+        path: ../../assets/SayAnything.png

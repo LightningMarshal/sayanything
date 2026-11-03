@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Say Anything
+GenericName=Voice Dictation
+Comment=Hold a shortcut, talk, and your words appear where you type. Runs on your computer.
+Exec=sayanything %U
+Icon=io.github.lightningmarshal.SayAnything
+Terminal=false
+Categories=Utility;Accessibility;
+Keywords=dictation;speech;voice;transcription;whisper;speech-to-text;
+StartupWMClass=sayanything

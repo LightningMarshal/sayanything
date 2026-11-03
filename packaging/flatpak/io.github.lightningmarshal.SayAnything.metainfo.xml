@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.lightningmarshal.SayAnything</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Say Anything</name>
+  <summary>Voice dictation that runs on your computer</summary>
+  <developer id="io.github.lightningmarshal">
+    <name>LightningMarshal</name>
+  </developer>
+  <description>
+    <p>
+      Hold a shortcut, talk, and let go: your words appear in whatever app you are typing in.
+      Speech is turned into text on your own computer with whisper.cpp, so nothing you say
+      leaves your device. No account, no cloud, no telemetry.
+    </p>
+    <ul>
+      <li>Hold to talk, or tap once for hands-free dictation that stops when you go quiet</li>
+      <li>A drop pad that catches your words so you can place them anywhere</li>
+      <li>A custom dictionary for names and terms</li>
+      <li>Optional rewrite through a local AI model you run yourself</li>
+    </ul>
+    <p>
+      On Linux the shortcut is set up through your desktop (KDE Plasma 6 or GNOME 48 and newer),
+      so Say Anything never sees your other keystrokes.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.lightningmarshal.SayAnything.desktop</launchable>
+  <url type="homepage">https://github.com/LightningMarshal/sayanything</url>
+  <url type="bugtracker">https://github.com/LightningMarshal/sayanything/issues</url>
+  <url type="vcs-browser">https://github.com/LightningMarshal/sayanything</url>
+  <content_rating type="oars-1.1"/>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+  <categories>
+    <category>Utility</category>
+    <category>Accessibility</category>
+  </categories>
+  <releases>
+    <release version="0.2.0" date="2026-11-03">
+      <description>
+        <p>First Linux build: desktop portal shortcuts and paste, local whisper.cpp transcription.</p>
+      </description>
+    </release>
+  </releases>
+</component>

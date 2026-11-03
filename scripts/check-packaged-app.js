@@ -1,9 +1,16 @@
 'use strict';
 
 /**
- * Verify a packaged Say Anything build (used by the Windows packaging CI job).
+ * Verify a packaged Say Anything build (used by the Windows and Linux
+ * packaging CI jobs).
  *
  *   node scripts/check-packaged-app.js "dist/win-unpacked/Say Anything.exe"
+ *   node scripts/check-packaged-app.js dist/linux-unpacked/sayanything --electron-arg=--no-sandbox
+ *
+ * Options after the executable:
+ *   --electron-arg=X   pass X to the app first on every launch (repeatable),
+ *                      e.g. --no-sandbox where AppArmor blocks Chromium's sandbox
+ *   --model-optional   accept a skipped server boot (no model staged)
  *
  * 1. Fuses: every fuse in scripts/fuses.js is set as declared in the binary.
  * 2. RunAsNode is really off: launching with ELECTRON_RUN_AS_NODE=1 and a
@@ -19,7 +26,14 @@ const cp = require('child_process');
 const { FUSES } = require('./fuses');
 
 const exe = process.argv[2];
-if (!exe) { console.error('usage: node scripts/check-packaged-app.js <packaged executable or .app>'); process.exit(2); }
+if (!exe) { console.error('usage: node scripts/check-packaged-app.js <packaged executable or .app> [--electron-arg=X ...] [--model-optional]'); process.exit(2); }
+const EXTRA = [];
+let modelOptional = false;
+for (const a of process.argv.slice(3)) {
+  if (a.indexOf('--electron-arg=') === 0) EXTRA.push(a.slice('--electron-arg='.length));
+  else if (a === '--model-optional') modelOptional = true;
+  else { console.error('check-packaged-app: unknown option ' + a); process.exit(2); }
+}
 
 let failed = 0;
 function check(ok, label, extra) {
@@ -30,7 +44,7 @@ function check(ok, label, extra) {
 function run(args, env, timeoutMs) {
   return new Promise(function (resolve) {
     let out = '';
-    const child = cp.spawn(exe, args, { env: Object.assign({}, process.env, env || {}), windowsHide: true });
+    const child = cp.spawn(exe, EXTRA.concat(args), { env: Object.assign({}, process.env, env || {}), windowsHide: true });
     child.stdout.on('data', function (d) { out += d; });
     child.stderr.on('data', function (d) { out += d; });
     const t = setTimeout(function () { try { child.kill(); } catch (e) { /* ignore */ } }, timeoutMs);
@@ -67,7 +81,11 @@ function summaryOf(out) {
   const s = summaryOf(smoke.out);
   check(!!s.summary && s.summary.ok === true, 'packaged --smoke summary ok');
   const server = s.checks.find(function (c) { return c.check === 'server'; });
-  check(!!server && server.ok === true && !server.skipped, 'whisper-server boots from the packaged app with the bundled model');
+  if (modelOptional && server && server.skipped) {
+    console.log('SKIP  whisper-server boot (no model staged; --model-optional)');
+  } else {
+    check(!!server && server.ok === true && !server.skipped, 'whisper-server boots from the packaged app with the bundled model');
+  }
 
   console.log(failed ? '\ncheck-packaged-app: FAILED (' + failed + ')' : '\ncheck-packaged-app: ok');
   process.exit(failed ? 1 : 0);

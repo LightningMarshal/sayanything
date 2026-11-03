@@ -73,19 +73,19 @@ jobs:
         run: xvfb-run -a node test/linux-boot-check.js
 
   # Linux: build whisper-server from the pinned tag and transcribe a real sample
-  # through the app's own server.js/client.js. Also checks the per-launch
-  # --request-path lockdown (WS-13) against the real binary.
+  # through the app's own server.js/client.js (also checks the WS-13
+  # --request-path lockdown against the real binary). Then package the app
+  # (electron-builder --dir, fuses applied), check the packaged app against a
+  # fake desktop portal with the real engine, and hand it to the Flatpak job.
   whisper-linux:
-    name: Linux whisper-server build + real transcription
+    name: Linux whisper-server, real transcription, packaged app
     runs-on: ubuntu-latest
-    env:
-      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - name: Install dev dependencies
+      - name: Install dependencies (with the Electron binary)
         run: npm ci
       - name: Cache the whisper.cpp source and build tree
         uses: actions/cache@v5
@@ -101,6 +101,50 @@ jobs:
           key: model-tiny.en-921e4cf8686fdd99
       - name: Real transcription (tiny.en, jfk.wav) + request-path lockdown
         run: SA_REQUIRE_WHISPER=1 SA_E2E_DATA="$HOME/sa-e2e" node test/whisper-linux-e2e.js
+      - name: Tools for the packaged-app check and desktop file validation
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q dbus-daemon desktop-file-utils appstream
+      - name: Validate the .desktop file and AppStream metadata
+        run: |
+          desktop-file-validate packaging/flatpak/io.github.lightningmarshal.SayAnything.desktop
+          appstreamcli validate --no-net packaging/flatpak/io.github.lightningmarshal.SayAnything.metainfo.xml
+      - name: Package the Linux app (electron-builder --dir, fuses applied in afterPack)
+        run: |
+          mkdir -p build-resources/models
+          npx electron-builder --linux --dir
+      - name: Packaged app check (fuses, RunAsNode, smoke with the real engine, portal shortcuts)
+        run: SA_TEST_MODEL="$HOME/sa-e2e/SayAnything/models/ggml-tiny.en.bin" xvfb-run -a node test/linux-packaged-check.js
+      - name: Hand the packaged app to the Flatpak job (tar keeps file modes)
+        run: tar -C dist -czf linux-unpacked.tar.gz linux-unpacked
+      - uses: actions/upload-artifact@v5
+        with:
+          name: linux-unpacked
+          path: linux-unpacked.tar.gz
+          retention-days: 3
+
+  # Flatpak bundle for testing on real desktops (SteamOS, Ubuntu). Built in
+  # Flathub's own container; whisper-server is rebuilt inside the Flatpak SDK
+  # from the pinned commit. The .flatpak bundle is uploaded as an artifact.
+  flatpak:
+    name: Flatpak bundle
+    needs: whisper-linux
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: linux-unpacked
+      - name: Unpack the packaged app
+        run: mkdir -p dist && tar -C dist -xzf linux-unpacked.tar.gz
+      - uses: flathub-infra/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: SayAnything.flatpak
+          manifest-path: packaging/flatpak/io.github.lightningmarshal.SayAnything.yml
+          cache-key: flatpak-builder-${{ github.sha }}
 
   windows:
     name: Windows helper build + self-test
