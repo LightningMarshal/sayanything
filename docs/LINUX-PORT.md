@@ -118,6 +118,12 @@ compiled inside the Flatpak, and the code is tested in CI against a real bus.
 
 ### Installing the test Flatpak
 
+Tagged releases attach it too: the **Release (draft)** workflow builds
+`SayAnything-<version>-linux-x86_64.flatpak` alongside the Windows files, with
+the same `SHA256SUMS.txt` and provenance attestation, and the README's Install
+section covers it. Until then, use the CI artifact:
+
+
 1. Open the latest CI run on GitHub (Actions tab), and download the
    `SayAnything.flatpak` artifact from the "Flatpak bundle" job (it is zipped).
 2. On SteamOS, Flathub is already set up. On Ubuntu, add it once:
