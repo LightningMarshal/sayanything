@@ -4,13 +4,13 @@
 
 ### Free, local transcription. Talk anywhere, drop anywhere.
 
-**Say Anything** lets you talk instead of type. Hold **Right Ctrl** (Windows) or **Right Cmd** (Mac) in any app, say your thing, let go, and the cleaned-up text drops in at your cursor about a second later. It runs 100% on your machine. Free, open-source, no account, no cloud, no subscription, no telemetry. None of that.
+**Say Anything** lets you talk instead of type. Hold **Right Ctrl** (Windows), **Right Cmd** (Mac) or **Ctrl+Super+Space** (Linux, beta) in any app, say your thing, let go, and the cleaned-up text drops in at your cursor about a second later. It runs 100% on your machine. Free, open-source, no account, no cloud, no subscription, no telemetry. None of that.
 
 [![CI](https://github.com/LightningMarshal/sayanything/actions/workflows/ci.yml/badge.svg)](https://github.com/LightningMarshal/sayanything/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-5EEAD4.svg)](LICENSE)
 [![100% local](https://img.shields.io/badge/100%25-local-67E8F9.svg)](#privacy)
 [![No cloud](https://img.shields.io/badge/cloud-none-A78BFA.svg)](#privacy)
-[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS-8B93A7.svg)](#requirements)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS%20%7C%20Linux%20(beta)-8B93A7.svg)](#requirements)
 
 <br />
 
@@ -98,13 +98,30 @@ You can have it hand each finished dictation to a local model for one last polis
 - Node.js 24+
 - Xcode Command Line Tools (`xcode-select --install`). Setup uses `swiftc` to build the tiny helper and `cmake` + `clang` to build the speech engine, all on your machine.
 
+**Linux (beta)**
+- A Wayland desktop with KDE Plasma 6, or GNOME 48 or newer. That covers SteamOS desktop mode, Ubuntu 26.04, Fedora, Bazzite and CachyOS. The hotkey and paste go through your desktop's portals, which older desktops and X11-only sessions don't offer.
+- An x86-64 CPU from about 2013 or later (AVX2), or a 64-bit ARM one.
+- For the Flatpak: nothing else. To run from source: Node.js 24+, plus `git`, `cmake` and a C++ compiler to build the speech engine.
+
 ## Install
 
 Download the latest Windows build from the [Releases page](https://github.com/LightningMarshal/sayanything/releases): `SayAnything-Setup-<version>.exe` (installer) or the portable zip.
 
 - **Check the download.** Each release has a `SHA256SUMS.txt`. In PowerShell: `Get-FileHash .\SayAnything-Setup-<version>.exe` and compare with the line in that file. Releases also carry a GitHub build-provenance attestation: `gh attestation verify <file> -R LightningMarshal/sayanything` proves the file was built by this repo's release workflow.
 - **Unsigned for now.** Windows SmartScreen will say "unknown publisher" the first time (More info → Run anyway). Code signing is planned.
-- **Mac and Linux:** build from source below for now. A Linux version is planned (see `docs/LINUX-PORT.md`).
+- **Mac:** build from source below for now.
+
+**Linux (beta).** Download `SayAnything-<version>-linux-x86_64.flatpak` from the same release. It hasn't been tested on real desktops yet, so reports are very welcome.
+
+```bash
+sha256sum -c --ignore-missing SHA256SUMS.txt     # check the download
+# Ubuntu only (SteamOS and most others already have Flathub):
+flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user ./SayAnything-<version>-linux-x86_64.flatpak
+flatpak run io.github.lightningmarshal.SayAnything
+```
+
+On first run your desktop asks you to approve three shortcuts (GNOME shows a dialog; KDE lists them under the app in System Settings): **Ctrl+Super+Space** to dictate, **Ctrl+Super+Shift+Space** for the drop pad and **Ctrl+Super+Esc** to cancel. You can change them in your desktop's keyboard settings. The first paste asks for keyboard access ("Remote desktop"); if you say no, your words go on the clipboard and the pill tells you to press Ctrl+V. Pick a model in **Settings > Model**, since the Flatpak doesn't bundle one.
 
 ## Setup and run
 
@@ -125,6 +142,15 @@ node scripts/setup.js              # compiles the helper, grabs the default mode
 npm start                          # launches, shows up in your menu bar
 ```
 
+Linux (from source; the Flatpak above needs none of this):
+
+```bash
+npm install                          # dev tooling only; nothing ships at runtime
+bash scripts/build-whisper-linux.sh  # builds whisper.cpp (static, CPU) from source, once
+node scripts/setup.js                # grabs the default model
+npm start                            # shows up in your tray
+```
+
 First launch on a Mac walks you through the three permissions it needs (Microphone, Input Monitoring, Accessibility). That's just how macOS gates global hotkeys and text insertion; the grants stay on your machine like everything else.
 
 - `npm start` runs the app.
@@ -136,7 +162,7 @@ Default model is **small.en** (466 MB). Smaller ones (`tiny.en`, `base.en`) and 
 
 ## Building a release
 
-Releases are built by the **Release (draft)** GitHub workflow: push a tag `v<version>` matching `package.json` (or run it from the Actions tab). It builds the installer and portable zip on Windows, verifies the packaged app (security fuses, smoke test with the bundled model), writes `SHA256SUMS.txt`, adds a provenance attestation, and creates a **draft** release for you to review and publish.
+Releases are built by the **Release (draft)** GitHub workflow: push a tag `v<version>` matching `package.json` (or run it from the Actions tab). It builds the installer and portable zip on Windows and the Flatpak on Linux, verifies each packaged app (security fuses, smoke test with a real model), writes one `SHA256SUMS.txt` for every file, adds a provenance attestation, and creates a **draft** release for you to review and publish.
 
 To build locally instead: both of these bundle Whisper, the helper, and the default `small.en` model right into the package, so whoever runs it gets zero setup and no download.
 
@@ -153,8 +179,8 @@ On a Mac the same two commands make a `.dmg` and a `.zip` for both Apple Silicon
 
 An Electron shell (main is CommonJS, the windows are plain HTML/CSS/JS, no bundler, no framework) plus two small local native bits:
 
-- **The input helper.** One tiny native program per platform, both talking the same JSON-over-stdio protocol. On Windows it's a C# helper compiled at setup by Windows' own `csc.exe` ([`native/SayAnythingHelper.cs`](native/SayAnythingHelper.cs)); on Mac it's a Swift helper built by `swiftc` ([`native/SayAnythingHelper.swift`](native/SayAnythingHelper.swift)). It watches only your hotkey, does the clipboard-swap paste and unicode typing, and reports the frontmost app. You can read every line. It's never downloaded.
-- **whisper-server.** From whisper.cpp v1.9.1, kept warm on `127.0.0.1:8737`. Transcription is a local `POST` to `/inference`. The server has no login of its own and allows any website origin, so each launch puts all its routes behind a random 128-bit path that only the app knows; a web page open in your browser can't reach it. On Mac it's built from source as one universal binary; on Apple Silicon it uses Metal so transcription runs on the GPU, and on Intel it runs on the CPU (Accelerate).
+- **The input helper.** One tiny native program per platform, both talking the same JSON-over-stdio protocol. On Windows it's a C# helper compiled at setup by Windows' own `csc.exe` ([`native/SayAnythingHelper.cs`](native/SayAnythingHelper.cs)); on Mac it's a Swift helper built by `swiftc` ([`native/SayAnythingHelper.swift`](native/SayAnythingHelper.swift)). It watches only your hotkey, does the clipboard-swap paste and unicode typing, and reports the frontmost app. You can read every line. It's never downloaded. **Linux has no helper at all:** the app asks your desktop for the shortcuts and for keyboard access through xdg-desktop-portal, over a small D-Bus client written in plain Node ([`src/main/linux/`](src/main/linux/)).
+- **whisper-server.** From whisper.cpp v1.9.1, kept warm on `127.0.0.1:8737`. Transcription is a local `POST` to `/inference`. The server has no login of its own and allows any website origin, so each launch puts all its routes behind a random 128-bit path that only the app knows; a web page open in your browser can't reach it. On Mac it's built from source as one universal binary; on Apple Silicon it uses Metal so transcription runs on the GPU, and on Intel it runs on the CPU (Accelerate). On Linux it's built from source as one static CPU binary ([`scripts/build-whisper-linux.sh`](scripts/build-whisper-linux.sh)); the Flatpak builds it the same way inside the Flatpak SDK.
 
 **Zero runtime npm dependencies.** Downloads use Node's built-in `fetch`, unzipping uses Windows' own `tar.exe`.
 
@@ -164,12 +190,13 @@ Full spec is in [`docs/SPEC.md`](docs/SPEC.md), module layout in [`docs/CONTRACT
 
 Privacy here isn't a setting, it's how the thing is built.
 
-- **The keyboard hook only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing. One bit is the exception: if you press some other key while holding the hotkey (Ctrl+Arrow, or AltGr+Q to type @), the hook says "another key was pressed" so that shortcut doesn't start a dictation. It never says which key.
+- **On Linux the app never sees your keystrokes at all.** Your desktop owns the shortcuts and only tells the app "pressed" and "released". Paste goes through a keyboard-only remote desktop session you approve; that is the one way a Wayland app can send Ctrl+V.
+- **The keyboard hook (Windows and Mac) only ever reports your hotkey** (and Esc while recording). It never buffers, logs, or sends any other keystroke, and it ignores injected input so it can't feed on its own typing. One bit is the exception: if you press some other key while holding the hotkey (Ctrl+Arrow, or AltGr+Q to type @), the hook says "another key was pressed" so that shortcut doesn't start a dictation. It never says which key.
 - **Audio only lives in memory** and never hits disk. The WAV exists just long enough to POST to the local server.
 - **Whisper binds `127.0.0.1` only.** With AI rewrite off (the default), there are zero network calls at runtime, period.
 - **The optional rewrite only talks to localhost.** If (and only if) you turn it on, it POSTs to a local model server (Ollama on `127.0.0.1:11434` by default). The endpoint is configurable, but any non-loopback address is refused in code. No cloud, ever.
 - **The only times it uses the internet** are when setup grabs models and binaries (GitHub and Hugging Face, announced on the console) and when you download a model yourself from the **Model** tab. Nothing else.
-- **Download integrity.** Every download is checked against a pinned SHA-256 digest before it is used: the Windows whisper binary zip and all nine speech models. The model digests were computed from the downloaded files and cross-checked against Hugging Face's own published hashes (`scripts/pin-model-hashes.js`). On Mac, whisper is built from the `v1.9.1` tag and the build refuses to run unless that tag still points at the pinned commit `f049fff9`.
+- **Download integrity.** Every download is checked against a pinned SHA-256 digest before it is used: the Windows whisper binary zip and all nine speech models. The model digests were computed from the downloaded files and cross-checked against Hugging Face's own published hashes (`scripts/pin-model-hashes.js`). On Mac and Linux (including the Flatpak), whisper is built from the `v1.9.1` tag and the build refuses to run unless that tag still points at the pinned commit `f049fff9`.
 - **Dictations stay out of clipboard history.** Pasting works by briefly putting your text on the clipboard, then putting back whatever you had there (text, formatting, images and files). That temporary entry is marked so Windows clipboard history (Win+V) and cloud clipboard sync skip it, and on Mac it's marked concealed and transient, which most clipboard managers respect. Drop-pad copies get the same treatment unless you turn off **Keep drop-pad text out of clipboard history**. Limits: third-party clipboard managers can ignore these markers, and a very large or slow clipboard (over 64 MB or 0.75 s to read) may not come back in full.
 - **The helper is compiled on your machine** from source that's checked in (`csc.exe` on Windows, `swiftc` on Mac). The binary is never downloaded.
 
@@ -196,6 +223,10 @@ Privacy here isn't a setting, it's how the thing is built.
 **It pasted my OLD clipboard instead of what I said (Remote Desktop, Citrix, VMs, slow apps).** Text goes in by a quick clipboard swap: your words go on the clipboard, Ctrl+V is sent, and 300 ms later your previous clipboard is put back. A slow target can read the clipboard after it was restored. Quit Say Anything, raise `"restoreClipboardMs"` under `"inject"` in `settings.json` (`%APPDATA%\SayAnything` on Windows, `~/Library/Application Support/SayAnything` on Mac) to 800-1500, and start it again. Or set `"mode": "type"` there to type the text instead of pasting it.
 
 **It doesn't work in an app running as administrator.** Windows blocks a normal app from sending keystrokes to an elevated (admin) window. Say Anything doesn't run elevated, on purpose. Dictate into the elevated app's window from the drop pad and paste with Ctrl+V yourself. (Not yet verified on hardware, see `docs/MANUAL-TESTS.md`.)
+
+**Linux: the shortcut does nothing.** Check that your desktop approved it (KDE: System Settings, look for Say Anything under shortcuts; GNOME: the dialog on first run) and that you're in a Wayland session. **Settings > Hotkey** shows what your desktop actually bound, or "Not set". If a shortcut clashes with one your desktop already uses, change it in your desktop's keyboard settings.
+
+**Linux: it says "Copied. Press Ctrl+V to paste".** Say Anything doesn't have keyboard access, because you declined the "Remote desktop" request or your desktop doesn't offer it. Your words are on the clipboard. Restart the app to be asked again. Settings live in `~/.var/app/io.github.lightningmarshal.SayAnything/config/SayAnything` for the Flatpak, or `~/.config/SayAnything` from source.
 
 **I use Right Ctrl / AltGr in shortcuts.** Shortcuts like Right Ctrl + Arrow or AltGr + Q (for @) don't start a dictation: if another key goes down while the hotkey is held, the press is treated as a shortcut and dropped.
 

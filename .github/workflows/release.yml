@@ -1,10 +1,11 @@
 name: Release (draft)
 
-# Builds the Windows installer and portable zip, verifies the packaged app
-# (fuses, RunAsNode, smoke test with the bundled model), writes SHA256SUMS.txt,
-# attaches a build-provenance attestation, and creates a DRAFT GitHub release.
-# Nothing is published until the owner reviews the draft and clicks Publish.
-# Builds are unsigned until code signing is set up (deferred by the owner).
+# Builds the Windows installer and portable zip and the Linux Flatpak bundle,
+# verifies each packaged app (fuses, RunAsNode, smoke test with a real model),
+# writes one SHA256SUMS.txt for every file, attaches a build-provenance
+# attestation, and creates a DRAFT GitHub release. Nothing is published until
+# the owner reviews the draft and clicks Publish. Builds are unsigned until code
+# signing is set up (deferred by the owner).
 
 on:
   push:
@@ -16,16 +17,15 @@ on:
         required: true
 
 permissions:
-  contents: write        # create the draft release
-  id-token: write        # build-provenance attestation
-  attestations: write
+  contents: read
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
   windows:
     runs-on: windows-latest
     timeout-minutes: 60
-    env:
-      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -49,26 +49,139 @@ jobs:
         run: npm run dist -- --publish never
       - name: Verify the packaged app
         run: node scripts/check-packaged-app.js "dist/win-unpacked/Say Anything.exe"
-      - name: Portable zip and checksums
+      - name: Portable zip
         shell: pwsh
         run: |
           $ver = (node -p "require('./package.json').version")
           Compress-Archive -Path "dist/win-unpacked/*" -DestinationPath "dist/SayAnything-$ver-win-x64-portable.zip"
-          $files = Get-ChildItem dist -File | Where-Object { $_.Name -match '\.(exe|zip)$' }
-          $lines = foreach ($f in $files) { "{0}  {1}" -f (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower(), $f.Name }
-          $lines | Set-Content -Encoding ascii dist/SHA256SUMS.txt
-          Get-Content dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-windows
+          path: |
+            dist/*.exe
+            dist/*.zip
+          if-no-files-found: error
+          retention-days: 5
+
+  # Linux: same build and checks as the CI job "Linux whisper-server, real
+  # transcription, packaged app", then hand the package to the Flatpak job.
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Tag matches package.json version
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$TAG" ]; then echo "tag $TAG does not match package.json version $v"; exit 1; fi
+      - name: Install dependencies (with the Electron binary)
+        run: npm ci
+      - name: Tools for the tests and the packaged-app check
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q dbus-daemon desktop-file-utils appstream
+      - name: Tests
+        run: npm test
+      - name: Build whisper-server (static, CPU, x86-64-v3, pinned commit)
+        run: scripts/build-whisper-linux.sh
+      - name: Real transcription (tiny.en, jfk.wav) + request-path lockdown
+        run: SA_REQUIRE_WHISPER=1 SA_E2E_DATA="$HOME/sa-e2e" node test/whisper-linux-e2e.js
+      - name: Validate the .desktop file and AppStream metadata
+        run: |
+          desktop-file-validate packaging/flatpak/io.github.lightningmarshal.SayAnything.desktop
+          appstreamcli validate --no-net packaging/flatpak/io.github.lightningmarshal.SayAnything.metainfo.xml
+      - name: Package the Linux app (electron-builder --dir, fuses applied in afterPack)
+        run: |
+          mkdir -p build-resources/models
+          npx electron-builder --linux --dir --publish never
+      - name: Verify the packaged app (fuses, RunAsNode, smoke with the real engine, portal shortcuts)
+        run: SA_TEST_MODEL="$HOME/sa-e2e/SayAnything/models/ggml-tiny.en.bin" xvfb-run -a node test/linux-packaged-check.js
+      - name: Hand the packaged app to the Flatpak job (tar keeps file modes)
+        run: tar -C dist -czf linux-unpacked.tar.gz linux-unpacked
+      - uses: actions/upload-artifact@v5
+        with:
+          name: linux-unpacked
+          path: linux-unpacked.tar.gz
+          retention-days: 2
+
+  flatpak:
+    needs: linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: linux-unpacked
+      - name: Unpack the packaged app
+        run: mkdir -p dist && tar -C dist -xzf linux-unpacked.tar.gz
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: SayAnything.flatpak
+          manifest-path: packaging/flatpak/io.github.lightningmarshal.SayAnything.yml
+          cache-key: flatpak-builder-release-${{ github.sha }}
+          upload-artifact: false
+      - name: Name the bundle after the version
+        run: |
+          ver="${TAG#v}"
+          mkdir -p out
+          mv SayAnything.flatpak "out/SayAnything-$ver-linux-x86_64.flatpak"
+          ls -l out
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-flatpak
+          path: out/*.flatpak
+          if-no-files-found: error
+          retention-days: 5
+
+  # One checksum file and one attestation covering every download, then the
+  # draft release.
+  publish:
+    needs: [windows, flatpak]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # create the draft release
+      id-token: write        # build-provenance attestation
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+      - name: Checksums
+        working-directory: dist
+        run: |
+          ls -l
+          sha256sum -- *.exe *.zip *.flatpak > SHA256SUMS.txt
+          cat SHA256SUMS.txt
       - name: Build provenance attestation
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
             dist/*.exe
             dist/*.zip
+            dist/*.flatpak
       - name: Create draft release
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          gh release create "$TAG" --draft --target "${{ github.sha }}" --title "Say Anything $TAG" \
-            --notes "Unsigned build: Windows SmartScreen will say 'unknown publisher' (More info -> Run anyway). Verify the download against SHA256SUMS.txt, and check provenance with: gh attestation verify <file> -R ${{ github.repository }}" \
-            dist/*.exe dist/*.zip dist/SHA256SUMS.txt
+          cat > notes.md <<EOF
+          **Unsigned builds.** Verify any download against \`SHA256SUMS.txt\`, and check where it was built with:
+          \`gh attestation verify <file> -R $REPO\`
+
+          **Windows:** \`SayAnything-Setup-*.exe\` (installer) or the portable zip. SmartScreen will say "unknown publisher" (More info -> Run anyway).
+
+          **Linux (beta):** \`SayAnything-*-linux-x86_64.flatpak\`, for KDE Plasma 6 or GNOME 48+ on Wayland. Not yet tested on real desktops; reports welcome.
+          \`flatpak install --user ./SayAnything-*-linux-x86_64.flatpak\` (on Ubuntu, add Flathub first: \`flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo\`).
+          EOF
+          gh release create "$TAG" -R "$REPO" --draft --target "${{ github.sha }}" --title "Say Anything $TAG" \
+            --notes-file notes.md \
+            dist/*.exe dist/*.zip dist/*.flatpak dist/SHA256SUMS.txt
