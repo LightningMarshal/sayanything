@@ -32,6 +32,12 @@ const fs = require('fs');
 const path = require('path');
 
 const RESTORE_TOKEN_FILE = 'linux-portal.json';
+// Same as the Flatpak id and package.json desktopName.
+const APP_ID = 'io.github.lightningmarshal.SayAnything';
+
+function runningInFlatpak() {
+  return !!process.env.FLATPAK_ID || fs.existsSync('/.flatpak-info');
+}
 const MAX_RESTARTS = 3;
 
 // Defaults when the configured hotkey cannot be expressed as a portal trigger
@@ -79,7 +85,7 @@ function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 class LinuxHelper extends EventEmitter {
   /**
    * @param {{dbus?:any, portal?:any, clipboard?:any, settings?:()=>any,
-   *          userData?:string, address?:string, log?:any}} [deps]
+   *          userData?:string, address?:string, log?:any, inFlatpak?:boolean}} [deps]
    */
   constructor(deps) {
     super();
@@ -90,6 +96,8 @@ class LinuxHelper extends EventEmitter {
     this._settings = deps.settings || function () { return {}; };
     this._userData = deps.userData || null;
     this._address = deps.address || undefined;
+    this._inFlatpak = typeof deps.inFlatpak === 'boolean' ? deps.inFlatpak : runningInFlatpak();
+    this.registered = false; // host app registered with the portal (AppImage / from source)
     this._log = deps.log || { info: function () {}, warn: function () {}, error: function () {} };
 
     this.ready = false;
@@ -161,6 +169,12 @@ class LinuxHelper extends EventEmitter {
       }
       const self = this;
       this._conn.on('close', function () { self._onLost('session bus connection closed'); });
+      // Outside a Flatpak, say who we are before any other portal call (the
+      // registry only accepts it first on a connection).
+      if (!this._inFlatpak) {
+        this.registered = await this._portal.registerHostApp(this._conn, APP_ID);
+        this._log.info('linux: portal host-app registration ' + (this.registered ? 'ok' : 'not available') + ' (' + APP_ID + ')');
+      }
     }
     const v = await this._portal.GlobalShortcuts.version(this._conn);
     if (!v) {
@@ -393,4 +407,4 @@ function userError(message, userMessage) {
 
 function create(deps) { return new LinuxHelper(deps); }
 
-module.exports = { create: create, LinuxHelper: LinuxHelper, triggerFor: triggerFor, DEFAULT_TRIGGER: DEFAULT_TRIGGER };
+module.exports = { create: create, LinuxHelper: LinuxHelper, triggerFor: triggerFor, DEFAULT_TRIGGER: DEFAULT_TRIGGER, APP_ID: APP_ID };

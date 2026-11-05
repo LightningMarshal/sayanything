@@ -29,6 +29,7 @@ const IFACE_REQUEST = 'org.freedesktop.portal.Request';
 const IFACE_SESSION = 'org.freedesktop.portal.Session';
 const IFACE_GS = 'org.freedesktop.portal.GlobalShortcuts';
 const IFACE_RD = 'org.freedesktop.portal.RemoteDesktop';
+const IFACE_REGISTRY = 'org.freedesktop.host.portal.Registry';
 
 const RESPONSE = { SUCCESS: 0, CANCELLED: 1, OTHER: 2 };
 const DEVICE = { KEYBOARD: 1, POINTER: 2, TOUCHSCREEN: 4 };
@@ -131,6 +132,28 @@ async function portalRequest(conn, iface, member, signature, args, options) {
     if (timer) clearTimeout(timer);
     conn.removeListener('signal', onSignal);
     conn.removeMatch(dbus.matchRule({ type: 'signal', interface: IFACE_REQUEST, member: 'Response', path: expected })).catch(function () {});
+  }
+}
+
+/**
+ * Tell xdg-desktop-portal which app this connection belongs to. Flatpak apps
+ * get their identity from the sandbox, but a host app (AppImage, run from
+ * source) is anonymous unless it registers, and newer portals (GNOME 50) may
+ * refuse GlobalShortcuts to anonymous apps. Must be the FIRST portal call on
+ * the connection; it is per connection. Resolves true when registered, false
+ * when the portal has no registry (older xdg-desktop-portal) or refused.
+ * @param {any} conn
+ * @param {string} appId e.g. io.github.lightningmarshal.SayAnything
+ */
+async function registerHostApp(conn, appId) {
+  try {
+    await conn.call({
+      destination: BUS_NAME, path: OBJ_PATH, interface: IFACE_REGISTRY,
+      member: 'Register', signature: 'sa{sv}', body: [appId, {}], timeoutMs: 5000,
+    });
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
@@ -335,6 +358,7 @@ class RemoteDesktop extends PortalSession {
 module.exports = {
   GlobalShortcuts: GlobalShortcuts,
   RemoteDesktop: RemoteDesktop,
+  registerHostApp: registerHostApp,
   PortalError: PortalError,
   RESPONSE: RESPONSE,
   DEVICE: DEVICE,

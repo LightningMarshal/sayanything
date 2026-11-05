@@ -34,7 +34,7 @@
     "prep": "node scripts/stage-bundle.js",
     "dist:dir": "npm run prep && electron-builder --dir",
     "dist": "npm run prep && electron-builder",
-    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js && node test/state-test.js && node test/hashes-test.js && node test/docs-drift-test.js && node test/boot-modules-test.js && node test/history-test.js && node test/ipc-handlers-test.js && node test/media-permissions-test.js && node test/renderer-security-test.js && node test/fuses-test.js && node test/whisper-server-test.js && node test/dbus-test.js && node test/portal-test.js && node test/helper-linux-test.js",
+    "test": "node test/formatter-test.js && node test/rewrite-test.js && node test/wav-test.js && node test/vad-test.js && node test/streaming-test.js && node test/hotkey-match-test.js && node test/settings-defaults-test.js && node test/state-test.js && node test/hashes-test.js && node test/docs-drift-test.js && node test/boot-modules-test.js && node test/history-test.js && node test/ipc-handlers-test.js && node test/media-permissions-test.js && node test/renderer-security-test.js && node test/fuses-test.js && node test/whisper-server-test.js && node test/dbus-test.js && node test/portal-test.js && node test/helper-linux-test.js && node test/appimage-launcher-test.js",
     "lint": "eslint .",
     "typecheck": "tsc -p .",
     "check": "npm run lint && npm run typecheck && npm test",
@@ -115,7 +115,17 @@
     "linux": {
       "target": "dir",
       "executableName": "sayanything",
-      "category": "Utility"
+      "category": "Utility",
+      "description": "Hold a shortcut, talk, and your words appear where you type. Runs on your computer.",
+      "desktop": {
+        "Keywords": "dictation;speech;voice;transcription;whisper;speech-to-text;"
+      }
+    },
+    "appImage": {
+      "artifactName": "SayAnything-${version}-linux-${arch}.${ext}",
+      "executableArgs": [
+        "--ozone-platform-hint=auto"
+      ]
     }
   },
   "devDependencies": {

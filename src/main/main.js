@@ -151,6 +151,11 @@ let setupNotice = false; // set once we've told the user to run setup (dedupes n
 
 function boot() {
   logInfo('SayAnything boot: starting');
+  // Set by packaging/appimage/launcher.sh when this system blocks Chromium's
+  // sandbox inside an AppImage and the app was started without it.
+  if (process.env.SAYANYTHING_SANDBOX_DISABLED === '1') {
+    logInfo('SayAnything boot: running WITHOUT Chromium\'s sandbox (this system blocks it for AppImages; the Flatpak keeps one)');
+  }
 
   let settings = null;
   try {

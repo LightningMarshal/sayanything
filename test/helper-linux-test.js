@@ -16,6 +16,9 @@
  *  E) no GlobalShortcuts portal: start() rejects with a userMessage
  *  F) capture() throws with guidance; placeAt() rejects but leaves the text on
  *     the clipboard; foreground() is blank
+ *  G) outside a Flatpak the app registers its id with the portal's host-app
+ *     registry first; inside a Flatpak it doesn't; a portal without the
+ *     registry still works
  *
  * B-F need dbus-daemon: required on Linux CI, skipped elsewhere.
  * Exit code: 0 on success, 1 on any failed assertion.
@@ -24,7 +27,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { LinuxHelper, triggerFor, DEFAULT_TRIGGER } = require('../src/main/linux/helper-linux');
+const { LinuxHelper, triggerFor, DEFAULT_TRIGGER, APP_ID } = require('../src/main/linux/helper-linux');
 const portal = require('../src/main/linux/portal');
 const { startPrivateBus, hasDbusDaemon } = require('./fixtures/private-bus');
 const { startFakePortal } = require('./fixtures/fake-portal');
@@ -81,11 +84,12 @@ async function busTests() {
   const fake = await startFakePortal(bus.address);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sa-linux-helper-'));
   const helpers = [];
-  function make(cb, settings) {
-    const h = new LinuxHelper({
+  function make(cb, settings, extra) {
+    const h = new LinuxHelper(Object.assign({
       address: bus.address, clipboard: cb, userData: tmp, log: silent,
       settings: function () { return settings || { hotkey: { vk: 163, mods: [] }, padHotkey: { vk: 68, mods: [17, 18] } }; },
-    });
+      inFlatpak: false,
+    }, extra || {}));
     helpers.push(h);
     return h;
   }
@@ -97,6 +101,9 @@ async function busTests() {
     const readyEv = nextEvent(h, 'ready', 3000);
     await h.start();
     check(await readyEv === true && h.ready === true, 'B) start() resolves and emits ready');
+    const reg = fake.registered.filter(function (r) { return r.sender === h._conn.uniqueName; });
+    check(reg.length === 1 && reg[0].appId === APP_ID && h.registered === true, 'B) outside a Flatpak, registers as ' + APP_ID);
+    check(fake.lateRegister.length === 0, 'B) registration came before any other portal call');
     check(fake.bound.length === 3 && fake.bound[0].id === 'dictate' && fake.bound[1].id === 'pad' && fake.bound[2].id === 'cancel', 'B) binds dictate + pad + cancel');
     check(fake.bound[2].preferred === DEFAULT_TRIGGER.cancel && DEFAULT_TRIGGER.cancel !== 'Escape', 'B) cancel is a chord, never a bare Esc');
     check(h.bound.length === 3 && h.bound[2].triggerDescription === DEFAULT_TRIGGER.cancel, 'B) bound shortcuts kept for Settings');
@@ -186,6 +193,19 @@ async function busTests() {
     check(r5.ok === true && r5.clipboardOnly === true && cb5.text === 'no portal', 'D) no RemoteDesktop portal -> clipboard only');
     await h5.stop();
     fake.missing.clear();
+
+    // ---- Host-app registry: skipped in a Flatpak; optional on older portals
+    const before = fake.registered.length;
+    const hf = make(fakeClipboard(''), null, { inFlatpak: true });
+    await hf.start();
+    check(hf.ready && fake.registered.length === before && hf.registered === false, 'G) inside a Flatpak, no host-app registration');
+    await hf.stop();
+    fake.noRegistry = true;
+    const ho = make(fakeClipboard(''));
+    await ho.start();
+    check(ho.ready === true && ho.registered === false, 'G) a portal without the registry still works (registered=false)');
+    await ho.stop();
+    fake.noRegistry = false;
 
     // ---- E) no GlobalShortcuts portal
     console.log('helper-linux: missing portal');

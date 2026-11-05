@@ -114,12 +114,13 @@ compiled inside the Flatpak, and the code is tested in CI against a real bus.
 | 3 | Settings > Hotkey on Linux shows the shortcuts the desktop actually bound (new `hotkey:linux` IPC: `{linux, bound}`), hides the press-to-capture buttons, and says to change them in the desktop's keyboard shortcut settings. **Cancel without Esc:** a third portal shortcut, `cancel` (default Ctrl+Super+Esc, a chord so plain Esc is never taken from other apps), cancels a recording like Esc does elsewhere | Done. `ipc-handlers-test`, `state-test` (cancel scenario), `helper-linux-test`, `settings-tabs-check` (Linux layout via the demo bridge's `?linux=1`), and the boot check now expects three shortcuts |
 | 4a | `scripts/build-whisper-linux.sh`: whisper-server from the same pinned v1.9.1 commit as macOS; static ggml/whisper, no OpenMP, CPU baseline x86-64-v3 (AVX2/FMA/F16C: Steam Deck and PCs from ~2013 on), never `-march=native`; links only glibc/libstdc++/libm/libgcc_s (checked); refuses a moved tag. `binaries.js` and `setup.js` point Linux users at it; `setup.js` skips the native-helper step on Linux | Done. New CI job builds it and runs `test/whisper-linux-e2e.js`: the app's own downloader (pinned hash) fetches tiny.en, and the app's `server.js`/`client.js` transcribe whisper.cpp's `jfk.wav`; it also checks the WS-13 `--request-path` lockdown against the real binary (all unprefixed routes 404) |
 | 4b | Flatpak `io.github.lightningmarshal.SayAnything` (`packaging/flatpak/`): Freedesktop 25.08 runtime + Electron2 BaseApp, the electron-builder package (fuses applied) plus whisper-server rebuilt inside the SDK from the pinned commit, `.desktop` + AppStream metadata + icon, zypak launcher with `--ozone-platform-hint=auto`. Permissions: Wayland (X11 fallback), DRI, PulseAudio (mic), network (model download and optional Ollama), tray and notifications; the hotkey and paste use portals, which need no extra permission. `package.json` gains `desktopName` (Wayland app id) and a Linux build section | Done in CI: the Linux job packages the app, validates the desktop/AppStream files, and runs `test/linux-packaged-check.js` (fuses, RunAsNode off, smoke with the real engine and a fake portal); the `flatpak` job builds the bundle in Flathub's container and uploads `SayAnything.flatpak`. Flathub submission later needs an offline from-source build (flatpak-node-generator) |
+| 4c | AppImage `SayAnything-<version>-linux-x86_64.AppImage` (electron-builder): the same package plus the static whisper-server, launched with `--ozone-platform-hint=auto` and **without** electron-builder's default `--no-sandbox`. A launcher (`packaging/appimage/launcher.sh`, installed by `scripts/after-pack.js` in AppImage builds only, in front of the Electron binary `sayanything-bin`) adds `--no-sandbox` **only** where the system blocks Chromium's user-namespace sandbox (Ubuntu's AppArmor userns restriction, `unprivileged_userns_clone=0`, `max_user_namespaces=0`), prints a notice and the app logs it; everywhere else the sandbox stays on (owner's decision). The Flatpak keeps its sandbox on Ubuntu and stays the recommended Ubuntu download. Because an AppImage, like a from-source run, has no sandbox identity, the adapter now registers `io.github.lightningmarshal.SayAnything` with the portal's host-app registry (`org.freedesktop.host.portal.Registry.Register`) as its first portal call; inside a Flatpak it skips this | Done. `test/appimage-launcher-test.js` runs the launcher against a fake `/proc` (each blocking condition, allowed, overrides, symlinked start). `test/linux-appimage-check.js` (CI and release) checks the extracted contents with the packaged-app check (real engine), then launches the AppImage file itself against a fake portal: smoke ok, registered first, three shortcuts bound, sandbox kept. Uploaded as a CI artifact and attached to releases |
 | 5 | Manual test matrix on SteamOS (KDE, Wayland) and Ubuntu 26.04 (GNOME 50, Wayland) | Needs the owner's machines |
 
 ### Installing the test Flatpak
 
 Tagged releases attach it too: the **Release (draft)** workflow builds
-`SayAnything-<version>-linux-x86_64.flatpak` alongside the Windows files, with
+`SayAnything-<version>-linux-x86_64.flatpak` (and the AppImage) alongside the Windows files, with
 the same `SHA256SUMS.txt` and provenance attestation, and the README's Install
 section covers it. Until then, use the CI artifact:
 
@@ -133,6 +134,13 @@ section covers it. Until then, use the CI artifact:
 4. On first run: approve the shortcuts (GNOME asks; KDE lists them under the
    app in System Settings), download a model from Settings > Model, then
    dictate. The first paste asks for keyboard access ("Remote desktop").
+
+### Flathub: planned, not now (owner's decision)
+
+Linux stays **beta** for now. Publishing on Flathub (which needs an offline,
+from-source build with flatpak-node-generator and a Flathub review) is a
+future feature, to pick up once there are confirmed Linux users. Until then
+Linux users get the Flatpak bundle and the AppImage from GitHub releases.
 
 ### Known gaps in phase 1 (by design or not yet done)
 
