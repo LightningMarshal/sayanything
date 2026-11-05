@@ -12,12 +12,15 @@
  *      host-app registry (AppImages are not sandboxed, so this is their only
  *      identity), and that it bound its three shortcuts.
  *   3. The embedded .desktop entry does not disable Chromium's sandbox
- *      (electron-builder's default AppImage args are --no-sandbox).
+ *      (electron-builder's default AppImage args are --no-sandbox), and the
+ *      sandbox-aware launcher sits in front of the Electron binary.
  *
  * In CI, FUSE may be unavailable, so step 2 uses APPIMAGE_EXTRACT_AND_RUN=1
  * (the runtime unpacks to a temp dir instead of mounting); the AppRun path is
- * the same. --no-sandbox is passed only because the CI runner's AppArmor
- * policy blocks Chromium's sandbox.
+ * the same. Step 2 goes through packaging/appimage/launcher.sh, which adds
+ * --no-sandbox only where the system blocks the sandbox (the Ubuntu CI runner
+ * does); the check confirms its decision matches this system. --no-sandbox
+ * is passed explicitly only when running as root, which Chromium requires.
  *
  * Usage: xvfb-run -a node test/linux-appimage-check.js dist/SayAnything-*.AppImage
  * Linux only. Exit 1 on any failed check.
@@ -36,6 +39,14 @@ let failures = 0;
 function check(cond, msg) {
   if (cond) console.log('PASS  ' + msg);
   else { failures++; console.log('FAIL  ' + msg); }
+}
+
+// Same test as packaging/appimage/launcher.sh.
+function sandboxBlocked() {
+  function rd(p) { try { return fs.readFileSync(p, 'utf8').trim(); } catch (e) { return null; } }
+  return rd('/proc/sys/kernel/apparmor_restrict_unprivileged_userns') === '1' ||
+    rd('/proc/sys/kernel/unprivileged_userns_clone') === '0' ||
+    rd('/proc/sys/user/max_user_namespaces') === '0';
 }
 
 function run(cmd, args, opts) {
@@ -63,11 +74,15 @@ async function main() {
     const root = path.join(work, 'squashfs-root');
     check(ex.status === 0 && fs.existsSync(path.join(root, 'AppRun')), 'AppImage extracts (AppRun present)');
     check(fs.existsSync(path.join(root, 'resources', 'bin', 'whisper', 'whisper-server')), 'whisper-server is inside the AppImage');
+    const launcher = fs.readFileSync(path.join(root, 'sayanything'), 'utf8');
+    check(/^#!\/bin\/sh/.test(launcher) && /sandbox_blocked/.test(launcher) && fs.existsSync(path.join(root, 'sayanything-bin')),
+      'the sandbox-aware launcher sits in front of the Electron binary (sayanything-bin)');
     const desktop = fs.readdirSync(root).filter(function (f) { return /\.desktop$/.test(f); });
     const entry = desktop.length ? fs.readFileSync(path.join(root, desktop[0]), 'utf8') : '';
     check(/^Exec=.*--ozone-platform-hint=auto/m.test(entry) && !/--no-sandbox/.test(entry),
       'desktop entry launches natively on Wayland and keeps Chromium\'s sandbox');
-    const inner = await run(process.execPath, [path.join(__dirname, 'linux-packaged-check.js'), path.join(root, 'sayanything')],
+    // The fuse wire lives in the real binary, so check that one directly.
+    const inner = await run(process.execPath, [path.join(__dirname, 'linux-packaged-check.js'), path.join(root, 'sayanything-bin')],
       { env: process.env, echo: true, timeoutMs: 400000 });
     check(inner.code === 0, 'packaged-app check on the AppImage contents (fuses, RunAsNode, smoke, shortcuts)');
 
@@ -80,7 +95,14 @@ async function main() {
         DBUS_SESSION_BUS_ADDRESS: bus.address, XDG_CONFIG_HOME: cfg, APPIMAGE_EXTRACT_AND_RUN: '1',
         TMPDIR: work,
       });
-      const r = await run(appImage, ['--no-sandbox', '--smoke'], { env: env, timeoutMs: 180000 });
+      // Through the launcher: it adds --no-sandbox itself where the system
+      // blocks the sandbox (e.g. the Ubuntu CI runner). Chromium also refuses
+      // to run as root with a sandbox, so only then pass it explicitly.
+      const blocked = sandboxBlocked();
+      const asRoot = typeof process.getuid === 'function' && process.getuid() === 0;
+      const r = await run(appImage, (asRoot ? ['--no-sandbox'] : []).concat(['--smoke']), { env: env, timeoutMs: 180000 });
+      const notice = /starting without it/.test(r.out);
+      check(notice === blocked, 'launcher ' + (blocked ? 'disabled' : 'kept') + ' the sandbox, matching this system (blocked=' + blocked + ')');
       const lines = r.out.split('\n').filter(function (l) { return /^\{.*\}$/.test(l.trim()); }).map(function (l) {
         try { return JSON.parse(l); } catch (e) { return null; }
       }).filter(Boolean);

@@ -35,6 +35,20 @@ module.exports = async function afterPack(context) {
   await applyFuses(exe, { resetAdHocDarwinSignature: platform === 'darwin' });
   console.log('after-pack: Electron fuses applied to ' + exe);
 
+  // Linux AppImage only: put packaging/appimage/launcher.sh in front of the
+  // (already fused) Electron binary, which becomes sayanything-bin. The
+  // launcher adds --no-sandbox only on systems that block Chromium's sandbox
+  // inside an AppImage. Plain --dir builds (and so the Flatpak, which runs the
+  // binary through zypak) are left alone.
+  const targets = (context.targets || []).map(function (t) { return t && t.name; });
+  if (platform === 'linux' && targets.indexOf('appImage') !== -1) {
+    const bin = exe + '-bin';
+    fs.renameSync(exe, bin);
+    fs.copyFileSync(path.join(__dirname, '..', 'packaging', 'appimage', 'launcher.sh'), exe);
+    fs.chmodSync(exe, 0o755);
+    console.log('after-pack: AppImage launcher installed (' + path.basename(exe) + ' -> ' + path.basename(bin) + ')');
+  }
+
   if (platform !== 'darwin') return;
 
   const resourcesDir = path.join(context.appOutDir, productFilename + '.app', 'Contents', 'Resources');

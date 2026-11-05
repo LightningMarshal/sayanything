@@ -125,7 +125,7 @@ On first run your desktop asks you to approve three shortcuts (GNOME shows a dia
 
 **Or the AppImage**, a single file with nothing to install: download `SayAnything-<version>-linux-x86_64.AppImage`, then `chmod +x` it and run it. Good for SteamOS, Arch, CachyOS and Fedora. Two catches:
 - It needs FUSE 2 (`libfuse2`, already present on most desktops). Without it, run it with `--appimage-extract-and-run`.
-- **On Ubuntu 24.04 and newer, use the Flatpak.** Ubuntu's AppArmor policy blocks the sandbox Chromium needs inside an AppImage, so it won't start. Say Anything doesn't switch the sandbox off for you; the Flatpak has its own and works normally.
+- **On Ubuntu 24.04 and newer, prefer the Flatpak.** Ubuntu's AppArmor policy blocks the sandbox Chromium uses inside an AppImage. The AppImage still runs there: its launcher detects the block and starts the app without that sandbox, says so on the terminal and in the log, and keeps the sandbox on every system that allows it. The Flatpak keeps its own sandbox on Ubuntu too. (`SAYANYTHING_NO_SANDBOX=0` makes the AppImage refuse instead of falling back.)
 
 The AppImage doesn't update itself, and your settings live in `~/.config/SayAnything`. Tools like Gear Lever or AppImageLauncher can add it to your app menu.
 
