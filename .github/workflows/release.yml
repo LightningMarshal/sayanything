@@ -1,6 +1,6 @@
 name: Release (draft)
 
-# Builds the Windows installer and portable zip and the Linux Flatpak bundle,
+# Builds the Windows installer and portable zip and the Linux Flatpak and AppImage,
 # verifies each packaged app (fuses, RunAsNode, smoke test with a real model),
 # writes one SHA256SUMS.txt for every file, attaches a build-provenance
 # attestation, and creates a DRAFT GitHub release. Nothing is published until
@@ -106,6 +106,16 @@ jobs:
           name: linux-unpacked
           path: linux-unpacked.tar.gz
           retention-days: 2
+      - name: Build the AppImage
+        run: npx electron-builder --linux AppImage --publish never
+      - name: AppImage check (contents, then the AppImage itself, against a fake portal)
+        run: SA_TEST_MODEL="$HOME/sa-e2e/SayAnything/models/ggml-tiny.en.bin" xvfb-run -a node test/linux-appimage-check.js dist/SayAnything-*-linux-x86_64.AppImage
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-appimage
+          path: dist/SayAnything-*-linux-x86_64.AppImage
+          if-no-files-found: error
+          retention-days: 5
 
   flatpak:
     needs: linux
@@ -143,7 +153,7 @@ jobs:
   # One checksum file and one attestation covering every download, then the
   # draft release.
   publish:
-    needs: [windows, flatpak]
+    needs: [windows, linux, flatpak]
     runs-on: ubuntu-latest
     permissions:
       contents: write        # create the draft release
@@ -159,7 +169,7 @@ jobs:
         working-directory: dist
         run: |
           ls -l
-          sha256sum -- *.exe *.zip *.flatpak > SHA256SUMS.txt
+          sha256sum -- *.exe *.zip *.flatpak *.AppImage > SHA256SUMS.txt
           cat SHA256SUMS.txt
       - name: Build provenance attestation
         uses: actions/attest-build-provenance@v2
@@ -168,6 +178,7 @@ jobs:
             dist/*.exe
             dist/*.zip
             dist/*.flatpak
+            dist/*.AppImage
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -181,7 +192,8 @@ jobs:
 
           **Linux (beta):** \`SayAnything-*-linux-x86_64.flatpak\`, for KDE Plasma 6 or GNOME 48+ on Wayland. Not yet tested on real desktops; reports welcome.
           \`flatpak install --user ./SayAnything-*-linux-x86_64.flatpak\` (on Ubuntu, add Flathub first: \`flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo\`).
+          Or the single-file \`SayAnything-*-linux-x86_64.AppImage\`: \`chmod +x\` it and run it. Needs FUSE 2 (\`libfuse2\`); on Ubuntu 24.04+ use the Flatpak instead (Ubuntu's AppArmor policy blocks the sandbox an AppImage relies on).
           EOF
           gh release create "$TAG" -R "$REPO" --draft --target "${{ github.sha }}" --title "Say Anything $TAG" \
             --notes-file notes.md \
-            dist/*.exe dist/*.zip dist/*.flatpak dist/SHA256SUMS.txt
+            dist/*.exe dist/*.zip dist/*.flatpak dist/*.AppImage dist/SHA256SUMS.txt

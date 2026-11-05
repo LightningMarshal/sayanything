@@ -123,6 +123,12 @@ flatpak run io.github.lightningmarshal.SayAnything
 
 On first run your desktop asks you to approve three shortcuts (GNOME shows a dialog; KDE lists them under the app in System Settings): **Ctrl+Super+Space** to dictate, **Ctrl+Super+Shift+Space** for the drop pad and **Ctrl+Super+Esc** to cancel. You can change them in your desktop's keyboard settings. The first paste asks for keyboard access ("Remote desktop"); if you say no, your words go on the clipboard and the pill tells you to press Ctrl+V. Pick a model in **Settings > Model**, since the Flatpak doesn't bundle one.
 
+**Or the AppImage**, a single file with nothing to install: download `SayAnything-<version>-linux-x86_64.AppImage`, then `chmod +x` it and run it. Good for SteamOS, Arch, CachyOS and Fedora. Two catches:
+- It needs FUSE 2 (`libfuse2`, already present on most desktops). Without it, run it with `--appimage-extract-and-run`.
+- **On Ubuntu 24.04 and newer, use the Flatpak.** Ubuntu's AppArmor policy blocks the sandbox Chromium needs inside an AppImage, so it won't start. Say Anything doesn't switch the sandbox off for you; the Flatpak has its own and works normally.
+
+The AppImage doesn't update itself, and your settings live in `~/.config/SayAnything`. Tools like Gear Lever or AppImageLauncher can add it to your app menu.
+
 ## Setup and run
 
 Windows:

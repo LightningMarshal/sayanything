@@ -77,6 +77,7 @@ jobs:
   # --request-path lockdown against the real binary). Then package the app
   # (electron-builder --dir, fuses applied), check the packaged app against a
   # fake desktop portal with the real engine, and hand it to the Flatpak job.
+  # Finally build and check the AppImage, uploaded as an artifact.
   whisper-linux:
     name: Linux whisper-server, real transcription, packaged app
     runs-on: ubuntu-latest
@@ -122,6 +123,15 @@ jobs:
           name: linux-unpacked
           path: linux-unpacked.tar.gz
           retention-days: 3
+      - name: Build the AppImage
+        run: npx electron-builder --linux AppImage --publish never
+      - name: AppImage check (contents, then the AppImage itself, against a fake portal)
+        run: SA_TEST_MODEL="$HOME/sa-e2e/SayAnything/models/ggml-tiny.en.bin" xvfb-run -a node test/linux-appimage-check.js dist/SayAnything-*-linux-x86_64.AppImage
+      - uses: actions/upload-artifact@v5
+        with:
+          name: SayAnything-AppImage
+          path: dist/SayAnything-*-linux-x86_64.AppImage
+          retention-days: 7
 
   # Flatpak bundle for testing on real desktops (SteamOS, Ubuntu). Built in
   # Flathub's own container; whisper-server is rebuilt inside the Flatpak SDK

@@ -34,6 +34,8 @@ async function startFakePortal(address) {
     grantDevices: 1,
     restoreToken: 'restore-2',
     missing: new Set(),
+    registered: [],         // [{sender, appId}] host-app registrations
+    lateRegister: [],       // senders that tried to register after another portal call
     calls: [],
     keys: [],
     selectOptions: null,
@@ -81,8 +83,21 @@ async function startFakePortal(address) {
     }
   }
 
+  const seenSenders = new Set(); // senders that already made a non-registry portal call
   conn.serve(OBJ, function (m) {
     fake.calls.push(m.member);
+    if (m.interface === 'org.freedesktop.host.portal.Registry' && m.member === 'Register') {
+      if (fake.noRegistry) return undefined; // older xdg-desktop-portal: UnknownMethod
+      // Like xdg-desktop-portal: only allowed before any other portal call.
+      if (seenSenders.has(m.sender)) {
+        fake.lateRegister.push(m.sender);
+        const e = new Error('Connection already associated with an application ID');
+        /** @type {any} */ (e).dbusName = 'org.freedesktop.portal.Error.Failed'; throw e;
+      }
+      fake.registered.push({ sender: m.sender, appId: m.body[0] });
+      return { signature: '', body: [] };
+    }
+    seenSenders.add(m.sender);
     if (m.interface === 'org.freedesktop.DBus.Properties' && m.member === 'Get') {
       if (fake.missing.has(m.body[0])) {
         const e = new Error('No such interface'); /** @type {any} */ (e).dbusName = 'org.freedesktop.DBus.Error.UnknownInterface'; throw e;
